@@ -1,65 +1,34 @@
-"use client";
-
-import { useState } from "react";
-import { login } from "@/services/auth.service";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { GalleryVerticalEnd } from "lucide-react";
+import { LoginForm } from "@/components/login-form";
+import { APP_NAME } from "@/constants/app";
 
 export default function LoginPage() {
-  const router = useRouter();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    try {
-      await login(email, password);
-      router.push("/dashboard");
-    } catch (err) {
-      console.log(err);
-      setError("Invalid email or password");
-    }
-  };
-
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-6 rounded shadow w-80">
-        <h1 className="text-xl font-semibold mb-4">Login</h1>
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+          <a href="/" className="flex items-center gap-2 font-medium">
+            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            {APP_NAME}
+          </a>
+        </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="border p-2 w-full mb-3"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-xs">
+            <LoginForm />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-muted relative hidden lg:block">
+        <img
+          src="/assets/login-bg.jpg"
+          alt="Image"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-
-        <input
-          type="password"
-          placeholder="Password"
-          className="border p-2 w-full mb-4"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-
-        <button className="bg-blue-600 w-full text-white p-2 rounded mb-3">
-          Login
-        </button>
-
-        {/* 👇 Add this block for Signup navigation */}
-        <p className="text-sm text-center">
-          Don’t have an account?{" "}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Sign Up
-          </Link>
-        </p>
-      </form>
+      </div>
     </div>
   );
 }
