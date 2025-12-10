@@ -9,12 +9,13 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user?.role !== "CLIENT") {
-      router.replace("/unauthorized"); // or generic unauthorized page
+    if (!loading && user?.role !== "ADMIN") {
+      router.replace("/unauthorized"); 
     }
   }, [loading, user]);
 
   if (loading || !user) return <LoadingDashboard/>;
 
-  return <div>Welcome client</div>;
+  return <div>Welcome Admin
+     </div>;
 }

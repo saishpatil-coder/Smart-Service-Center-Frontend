@@ -9,12 +9,13 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user?.role !== "CLIENT") {
+    if (!loading && user?.role !== "MECHANIC") {
       router.replace("/unauthorized"); // or generic unauthorized page
     }
   }, [loading, user]);
 
-  if (loading || !user) return <LoadingDashboard/>;
-
-  return <div>Welcome client</div>;
+  if (loading || !user) return <LoadingDashboard />;
+  return (
+    <div>Welcome mechanic</div>
+    );
 }

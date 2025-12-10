@@ -1,37 +1,42 @@
 export default function Hero() {
   return (
-    <section className="bg-[#6CA8F7] text-white py-20">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 items-center">
+    <section className="bg-[#6CA8F7] text-white py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 px-6 items-center relative">
         {/* LEFT */}
         <div>
-          <h1 className="text-5xl font-extrabold leading-tight">
-            SERVICE
-            <br />
-            CENTER
+          <h1 className="text-6xl font-extrabold leading-tight tracking-tight">
+            SERVICE <br /> CENTER
           </h1>
 
-          <p className="mt-4 text-white/90 text-lg max-w-sm">
-            Find the nearest service center for your vehicle.
+          <p className="mt-6 text-white/90 text-xl max-w-sm font-medium leading-relaxed">
+            Manage, book, and track vehicle services with ease and reliability.
           </p>
 
-          <div className="mt-8 flex gap-4">
-            <button className="bg-white text-blue-600 px-5 py-2 font-semibold rounded-md">
-              Book Now
+          {/* Buttons Row */}
+          <div className="flex items-center gap-4 mt-10">
+            <button className="bg-white text-black text-sm font-semibold px-4 py-2 rounded-full shadow-sm">
+              Book Service
             </button>
-            <button className="bg-white text-blue-600 px-5 py-2 font-semibold rounded-md">
-              Manage
+            <button className="bg-white text-black text-sm font-semibold px-4 py-2 rounded-full shadow-sm">
+              Manage Services
             </button>
           </div>
 
-          <button className="mt-4 underline">Learn More</button>
+          {/* Learn More */}
+          <button className="mt-6 bg-white text-black px-6 py-2 rounded-full font-semibold shadow">
+            Learn More
+          </button>
         </div>
 
-        {/* RIGHT IMAGE */}
-        <div className="flex justify-center">
-          <img
-            src="/assets/firetruck.jpg"
-            className="w-96 h-96 rounded-full object-cover border-white border-[8px] shadow-lg"
-          />
+        {/* RIGHT IMAGE (Large Oval, Cropped, No Border) */}
+        <div className="flex justify-center md:justify-end">
+          <div className="w-[700px] h-[380px] rounded-[200px] overflow-hidden shadow-xl transform translate-x-10 md:translate-x-24">
+            <img
+              src="/assets/login-bg.jpg"
+              alt="Service Center"
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
         </div>
       </div>
     </section>
