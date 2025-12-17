@@ -1,11 +1,29 @@
 "use client";
 
 import Image from "next/image";
-import { Clock, AlertTriangle, Wrench } from "lucide-react";
+import { Clock, Wrench, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import api from "@/lib/axios";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { confirmCancel } from "./ConfirmCancleToast";
+import { useUser } from "@/context/UserContext";
+function timeLeft(deadline) {
+  const diff = new Date(deadline) - new Date();
+  if (diff <= 0) return null;
+
+  const mins = Math.ceil(diff / 60000);
+  return mins < 60 ? `${mins} min` : `${Math.ceil(mins / 60)} hrs`;
+}
 
 export default function TicketCard({ ticket }) {
+  const {user} = useUser();
+  const router = useRouter();
+  const [cancelling , setCanceling] = useState(false)
+
   const {
+    id,
     title,
     description,
     imageUrl,
@@ -15,11 +33,9 @@ export default function TicketCard({ ticket }) {
     expectedCompletionHours,
     slaAcceptDeadline,
     slaAssignDeadline,
+    isEscalated,
   } = ticket;
 
-  /* ------------------------------
-        STATUS COLORS
-  ------------------------------- */
   const statusColor = {
     PENDING: "bg-yellow-100 text-yellow-700",
     ACCEPTED: "bg-blue-100 text-blue-700",
@@ -29,134 +45,128 @@ export default function TicketCard({ ticket }) {
     CANCELLED: "bg-red-100 text-red-700",
   }[status];
 
-  const severityColor = {
-    ACCIDENTAL: "bg-red-100 text-red-700",
-    CRITICAL: "bg-orange-100 text-orange-700",
-    MAJOR: "bg-yellow-100 text-yellow-700",
-    MINOR: "bg-blue-100 text-blue-700",
-  }[severityName];
+  const acceptLeft = status === "PENDING" ? timeLeft(slaAcceptDeadline) : null;
 
-  /* ------------------------------
-        PROGRESS (fake for now)
-  ------------------------------- */
-  const progress =
-    status === "COMPLETED"
-      ? 100
-      : status === "IN_PROGRESS"
-      ? 65
-      : status === "ASSIGNED"
-      ? 30
-      : 0;
+  const assignLeft = status === "ACCEPTED" ? timeLeft(slaAssignDeadline) : null;
 
-  /* ------------------------------
-        SLA TIME CALCULATIONS
-  ------------------------------- */
-function timeLeft(deadline) {
-  const now = new Date();
-  const target = new Date(deadline);
 
-  const diffMs = target - now;
 
-  if (diffMs <= 0) return "0 minutes";
+async function handleCancelConfirmed() {
+  setCanceling(true);
 
-  const diffMinutes = Math.ceil(diffMs / (1000 * 60));
+  try { 
+    await toast.promise(api.patch(`/client/ticket/${id}/cancel`), {
+      loading: "Canceling ticket...",
+      success: "Ticket cancelled successfully",
+      error: "Failed to cancel ticket",
+    });
 
-  if (diffMinutes < 60) {
-    return `${diffMinutes} minutes`;
+    router.push("/dashboard/client/track");
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setCanceling(false);
   }
+}
 
-  const diffHours = Math.ceil(diffMinutes / 60);
-
-  return `${diffHours} hours`;
+function handleCancel() {
+  confirmCancel(handleCancelConfirmed);
 }
 
 
-const acceptTimeLeft = slaAcceptDeadline ? timeLeft(slaAcceptDeadline) : null;
-const assignTimeLeft = slaAssignDeadline ? timeLeft(slaAssignDeadline) : null;
-
-
-  /* ------------------------------ */
-
   return (
-    <div className="flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border hover:shadow-md transition">
-      {/* LEFT SIDE */}
-      <div className="flex items-center gap-4">
-        {/* Image */}
-        <div className="w-16 h-16 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center">
+    <div
+      onClick={() => {
+        if(user.role == "ADMIN"){
+          if(status == "PENDING"){
+            router.push(`/dashboard/admin/ticket/${id}`);
+          }else{
+            router.push(`/dashboard/admin/tickets/${id}`);
+          }
+        }else{
+          router.push(`/dashboard/client/tickets/${id}`);
+        }
+      }}
+      className="bg-white border rounded-xl p-5 flex justify-between hover:shadow-md transition cursor-pointer"
+    >
+      {/* LEFT */}
+      <div className="flex gap-4">
+        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
           {imageUrl ? (
-            <Image
-              src={imageUrl}
-              width={64}
-              height={64}
-              alt="ticket"
-              className="object-cover h-full w-full"
-            />
+            <Image src={imageUrl} width={64} height={64} alt="ticket" />
           ) : (
-            <Wrench className="text-gray-400" size={28} />
+            <Wrench className="text-gray-400" />
           )}
         </div>
 
-        {/* Info */}
         <div>
           <h2 className="font-semibold text-lg">{title}</h2>
-          <p className="text-sm text-gray-500 truncate max-w-md">
+          <p className="text-sm text-gray-500 max-w-md truncate">
             {description || "No description"}
           </p>
 
-          <div className="flex items-center gap-3 mt-1">
-            <span
-              className={cn(
-                "px-2 py-1 rounded-md text-xs font-semibold",
-                severityColor
-              )}
-            >
+          <div className="flex items-center gap-3 mt-2 text-xs">
+            <span className="px-2 py-1 bg-gray-100 rounded">
               {severityName}
             </span>
-
-            <div className="flex items-center text-gray-500 text-xs gap-1">
+            <span className="flex items-center gap-1 text-gray-500">
               <Clock size={12} />
               {new Date(createdAt).toLocaleDateString()}
-            </div>
+            </span>
           </div>
 
-          {/* SLA Messages */}
-          <div className="mt-2 text-xs text-gray-600 space-y-1">
-            {acceptTimeLeft !== null && (
-              <p>
-                🕒 Will be accepted in <b>{acceptTimeLeft} </b>
+          {/* SLA / Escalation */}
+          <div className="mt-2 text-xs space-y-1">
+            {isEscalated && (
+              <p className="text-red-600 font-semibold flex items-center gap-1">
+                <AlertTriangle size={14} /> Escalated
               </p>
             )}
-            {assignTimeLeft !== null && (
+
+            {!isEscalated && acceptLeft && (
               <p>
-                🛠️ Will be assigned in <b>{assignTimeLeft}</b>
+                🕒 Will be accepted in <b>{acceptLeft}</b>
+              </p>
+            )}
+
+            {!isEscalated && assignLeft && (
+              <p>
+                🛠️ Will be assigned in <b>{assignLeft}</b>
               </p>
             )}
           </div>
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="w-48">
+      {/* RIGHT */}
+      <div className="text-right w-44 flex flex-col items-end justify-between">
         <span
           className={cn(
-            "px-3 py-1 rounded-md text-xs font-semibold float-right mb-2",
+            "inline-block px-3 py-1 rounded-md text-xs font-semibold",
             statusColor
           )}
         >
           {status.replace("_", " ")}
         </span>
 
-        <p className="text-xs text-gray-500 mb-1">Progress</p>
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
+        {expectedCompletionHours && status !== "COMPLETED" && (
+          <p className="text-xs text-gray-500">
+            Est. {expectedCompletionHours} hrs
+          </p>
+        )}
 
-        <p className="text-xs text-gray-500 mt-2 text-right">
-          Est. {expectedCompletionHours} hrs
-        </p>
+        {(status === "PENDING" || status === "ACCEPTED") && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCancel();
+            }}
+            disabled={cancelling}
+            className="text-xs text-red-600 flex items-center gap-1 hover:underline"
+          >
+            <X size={12} /> Cancel
+          </button>
+        )}
       </div>
     </div>
   );

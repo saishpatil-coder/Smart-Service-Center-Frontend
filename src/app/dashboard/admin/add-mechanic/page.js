@@ -5,6 +5,7 @@ import api from "@/lib/axios";
 import { CheckCircle, AlertCircle, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { addMechanic } from "@/services/admin.service";
+import { toast } from "sonner";
 
 export default function AddMechanicPage() {
   const [data, setData] = useState({
@@ -37,10 +38,12 @@ export default function AddMechanicPage() {
       setLoading(true);
 
       const res = await addMechanic(data.name, data.email, data.mobile, data.password);
+            toast(res.message || "Mechanic Added successfully!", { type: "success" });
 
       setSuccessMsg("Mechanic added successfully!");
       setData({ name: "", email: "", mobile: "", password: "" });
     } catch (err) {
+      console.log("error"  ,err)
       const message = err?.response?.data?.message || "Failed to add mechanic.";
       setErrorMsg(message);
     } finally {

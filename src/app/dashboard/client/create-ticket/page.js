@@ -7,10 +7,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Clock,
 } from "lucide-react";
 import { getAllServices } from "@/services/admin.service";
 import { addTicket } from "@/services/client.service";
-
+// import { toast } from "sonner";
+import { toast } from "react-toastify";
 export default function CreateTicketPage() {
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -18,13 +20,11 @@ export default function CreateTicketPage() {
 
   const [data, setData] = useState({
     serviceId: "",
-    title: "",
     description: "",
-    expectedCompletionHours: "",
-    expectedCost: "",
   });
 
   const [selectedService, setSelectedService] = useState(null);
+  const [slaPreview, setSlaPreview] = useState(null);
 
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -37,8 +37,11 @@ export default function CreateTicketPage() {
     async function fetchServices() {
       try {
         const res = await getAllServices();
+              toast( "Services Fetched Successfully", {
+                type: "success",
+              });
+
         setServices(res.data || []);
-        console.log(res.data)
       } catch (err) {
         console.log(err);
       } finally {
@@ -52,27 +55,41 @@ export default function CreateTicketPage() {
   const handleImage = (e) => {
     const file = e.target.files[0];
     setImage(file);
-
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreview(url);
-    }
+    if (file) setPreview(URL.createObjectURL(file));
   };
 
-  /* ------------------ Handle Service Selection ------------------ */
+  /* ------------------ Handle Service Select ------------------ */
   const handleServiceSelect = (id) => {
     setData({ ...data, serviceId: id });
 
     const service = services.find((s) => s.id === id);
     setSelectedService(service || null);
 
-    if (service) {
-      setData((prev) => ({
-        ...prev,
-        expectedCompletionHours: service.defaultExpectedHours || "",
-        expectedCost: service.defaultCost || "",
-      }));
+    if (!service) {
+      setSlaPreview(null);
+      return;
     }
+
+    // SLA preview (calculated on frontend for user)
+    const now = new Date();
+    const severity = service.Severity || {}; // if severity attached
+    const acceptMs = (severity.max_accept_minutes || 0) * 60000;
+    const assignMs = (severity.max_assign_minutes || 0) * 60000;
+    const hoursMs = (service.defaultExpectedHours || 0) * 3600000;
+
+    const slaAcceptDeadline = new Date(now.getTime() + acceptMs);
+    const slaAssignDeadline = new Date(now.getTime() + assignMs);
+    const expectedCompletionAt = new Date(
+      now.getTime() + acceptMs + assignMs + hoursMs
+    );
+
+    setSlaPreview({
+      slaAcceptDeadline,
+      slaAssignDeadline,
+      expectedCompletionAt,
+      expectedHours: service.defaultExpectedHours,
+      expectedCost: service.defaultCost,
+    });
   };
 
   /* ------------------ Submit Handler ------------------ */
@@ -84,28 +101,21 @@ export default function CreateTicketPage() {
 
     try {
       const formData = new FormData();
-
       formData.append("serviceId", data.serviceId);
-      formData.append("title", data.title);
       formData.append("description", data.description);
-      formData.append("expectedCompletionHours", data.expectedCompletionHours);
-      formData.append("expectedCost", data.expectedCost);
-
       if (image) formData.append("image", image);
 
-      await addTicket(formData);
+      const res = await addTicket(formData);
+      console.log(res)
 
       setSuccessMsg("Ticket created successfully!");
-      setData({
-        serviceId: "",
-        title: "",
-        description: "",
-        expectedCompletionHours: "",
-        expectedCost: "",
-      });
+      setData({ serviceId: "", description: "" });
       setSelectedService(null);
-      setImage(null);
       setPreview(null);
+      setImage(null);
+      setSlaPreview(null);
+
+      toast( res.message|| "Ticket created successfully!");
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || "Failed to create ticket.");
     } finally {
@@ -129,7 +139,6 @@ export default function CreateTicketPage() {
         {/* SERVICE SELECT */}
         <div>
           <label className="font-semibold">Select Service</label>
-
           {loadingServices ? (
             <div className="animate-pulse mt-2 h-12 bg-gray-200 rounded-lg"></div>
           ) : (
@@ -149,86 +158,74 @@ export default function CreateTicketPage() {
           )}
         </div>
 
-        {/* SHOW SERVICE DETAILS */}
-        {selectedService && (
-          <div className="p-4 border rounded-lg bg-blue-50 shadow-sm">
-            <h3 className="font-bold text-blue-700">
-              {selectedService.serviceTitle}
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              {selectedService.description}
-            </p>
+        {/* SERVICE DETAILS + SLA PREVIEW */}
+        {selectedService && slaPreview && (
+          <div className="p-4 border rounded-lg bg-blue-50 shadow-sm space-y-3">
+            {/* Service Description */}
+            <div>
+              <h3 className="font-bold text-blue-700">
+                {selectedService.serviceTitle}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {selectedService.description}
+              </p>
+            </div>
 
-            <div className="flex gap-4 mt-3 text-sm">
+            {/* Hours + Cost */}
+            <div className="flex gap-4 text-sm mt-2">
               <span className="font-semibold">
-                Expected Hours:{" "}
-                <span className="text-gray-700">
-                  {selectedService.defaultExpectedHours || "N/A"}
+                Expected Hours:
+                <span className="text-gray-700 ml-1">
+                  {slaPreview.expectedHours}
                 </span>
               </span>
-
               <span className="font-semibold">
-                Cost:{" "}
-                <span className="text-gray-700">
-                  ₹ {selectedService.defaultCost || "N/A"}
+                Cost:
+                <span className="text-gray-700 ml-1">
+                  ₹ {slaPreview.expectedCost}
                 </span>
               </span>
+            </div>
+
+            {/* SLA Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+              <div className="p-3 bg-white rounded-lg border shadow-sm">
+                <p className="text-xs text-gray-500">Accept Before</p>
+                <p className="font-semibold text-sm">
+                  {slaPreview.slaAcceptDeadline.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border shadow-sm">
+                <p className="text-xs text-gray-500">Assign Before</p>
+                <p className="font-semibold text-sm">
+                  {slaPreview.slaAssignDeadline.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border shadow-sm">
+                <p className="text-xs text-gray-500">Expected Completion</p>
+                <p className="font-semibold text-sm">
+                  {slaPreview.expectedCompletionAt.toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TITLE */}
-        <div>
-          <label className="font-semibold">Title</label>
-          <input
-            type="text"
-            placeholder="Short title (e.g., 'Engine noise issue')"
-            className="w-full border p-3 rounded-lg mt-1 bg-gray-50 outline-blue-500"
-            value={data.title}
-            onChange={(e) => setData({ ...data, title: e.target.value })}
-            required
-          />
-        </div>
 
         {/* DESCRIPTION */}
         <div>
           <label className="font-semibold">Description</label>
           <textarea
-            placeholder="Describe the problem in detail..."
+            placeholder="Describe the problem..."
             className="w-full border p-3 rounded-lg mt-1 bg-gray-50 outline-blue-500 min-h-[120px]"
             value={data.description}
             onChange={(e) => setData({ ...data, description: e.target.value })}
           />
         </div>
 
-        {/* HOURS + COST */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="font-semibold">Expected Completion Hours</label>
-            <input
-              type="number"
-              className="w-full border p-3 rounded-lg mt-1 bg-gray-50 outline-blue-500"
-              value={data.expectedCompletionHours}
-              onChange={(e) =>
-                setData({ ...data, expectedCompletionHours: e.target.value })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="font-semibold">Expected Cost</label>
-            <input
-              type="number"
-              className="w-full border p-3 rounded-lg mt-1 bg-gray-50 outline-blue-500"
-              value={data.expectedCost}
-              onChange={(e) =>
-                setData({ ...data, expectedCost: e.target.value })
-              }
-            />
-          </div>
-        </div>
-
-        {/* IMAGE INPUT */}
+        {/* IMAGE UPLOAD */}
         <div>
           <label className="font-semibold">Upload Image (optional)</label>
           <div className="w-full border p-3 rounded-lg mt-2 flex items-center gap-3 bg-gray-50">
@@ -236,7 +233,6 @@ export default function CreateTicketPage() {
             <input type="file" accept="image/*" onChange={handleImage} />
           </div>
 
-          {/* PREVIEW */}
           {preview && (
             <div className="mt-3">
               <img
@@ -268,7 +264,7 @@ export default function CreateTicketPage() {
         <button
           type="submit"
           disabled={loadingSubmit}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center"
         >
           {loadingSubmit ? (
             <>

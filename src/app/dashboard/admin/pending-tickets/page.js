@@ -5,15 +5,18 @@ import api from "@/lib/axios";
 import { Loader2, Clock, AlertTriangle, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function PendingTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   async function loadTickets() {
     try {
       const res = await api.get("/admin/pending-tickets");
       setTickets(res.data.tickets || []);
+      console.log(res.data.tickets[0])
     } catch (err) {
       console.error("Error loading tickets:", err);
     } finally {
@@ -119,9 +122,11 @@ function PendingTicketCard({ ticket }) {
       </div>
 
       {/* RIGHT ACTION */}
-      <button className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-        View <ChevronRight size={16} />
-      </button>
+      <Link href={`/dashboard/admin/ticket/${ticket.id}`}>
+        <button className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+          View <ChevronRight size={16} />
+        </button>
+      </Link>
     </div>
   );
 }
@@ -130,6 +135,9 @@ function PendingTicketCard({ ticket }) {
 function formatTimeLeft(deadline) {
   const now = new Date();
   const end = new Date(deadline);
+  console.log("NOW",now.toLocaleString())
+  console.log("END",end.toLocaleString())
+
   const diff = end - now;
 
   if (diff <= 0) return "Expired";

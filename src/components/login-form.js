@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/services/auth.service";
 import { useUser } from "@/context/UserContext";
+import { toast } from "react-toastify";
 
 export function LoginForm({ className, ...props }) {
   const [data, setData] = useState({
@@ -46,6 +47,7 @@ export function LoginForm({ className, ...props }) {
       let response = await login(data.email, data.password);
       setUser(response.user);
       let role = response.user.role ;
+      toast(response.message || "Login successful!",  );
       router.push(`/dashboard/${response.user.role.toLowerCase()}`);
       } catch (err) {
       setError("Invalid email or password.");

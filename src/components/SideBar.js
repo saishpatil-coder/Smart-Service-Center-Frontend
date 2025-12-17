@@ -4,7 +4,6 @@ import React from "react";
 import { useUser } from "@/context/UserContext";
 import SidebarLoading from "./SideBarLoading";
 import Link from "next/link";
-import { useSidebar } from "@/context/SidebarContext";
 import { APP_NAME } from "@/constants/app";
 import {
   LayoutDashboard,
@@ -20,7 +19,10 @@ import {
   Clock,
   ListOrdered,
   Tickets,
+  Users,
+  Wrench,
 } from "lucide-react";
+import { useDashboard } from "@/context/DashBoardContext";
 
 const SideBar = () => {
   const { user, loading } = useUser();
@@ -34,37 +36,42 @@ const SideBar = () => {
   const menu = user
     ? user.role === "ADMIN"
       ? [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard/admin",
-  },
-  {
-    label: "Stats",
-    icon: BarChart3Icon,
-    href: "/dashboard/admin/stats",
-  },
-  {
-    label: "Add Mechanic",
-    icon: UserPlus,
-    href: "/dashboard/admin/add-mechanic",
-  },
-  {
-    label: "Pending Tickets",
-    icon: Clock,
-    href: "/dashboard/admin/pending-tickets",
-  },
-  {
-    label: "Assignment Queue",
-    icon: ListOrdered,
-    href: "/dashboard/admin/assignment-queue",
-  },
-  {
-    label: "All Tickets",
-    icon: Tickets,
-    href: "/dashboard/admin/tickets",
-  }
-]
+          {
+            label: "Dashboard",
+            icon: LayoutDashboard,
+            href: "/dashboard/admin",
+          },
+          {
+            label: "Inventory",
+            icon: LayoutDashboard,
+            href: "/dashboard/admin/inventory",
+          },
+          {
+            label: "Pending Tickets",
+            icon: Clock,
+            href: "/dashboard/admin/pending-tickets",
+          },
+          {
+            label: "Assignment Queue",
+            icon: ListOrdered,
+            href: "/dashboard/admin/assignment-queue",
+          },
+          {
+            label: "All Tickets",
+            icon: Tickets,
+            href: "/dashboard/admin/tickets",
+          },
+          {
+            label: "Services",
+            icon: Wrench,
+            href: "/dashboard/admin/services",
+          },
+          {
+            label: "Mechanics",
+            icon: Users, // import from lucide-react
+            href: "/dashboard/admin/mechanics",
+          },
+        ]
       : user.role === "MECHANIC"
       ? [
           {
@@ -92,52 +99,52 @@ const SideBar = () => {
           },
         ]
       : [
-  {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard/client",
-  },
+          {
+            label: "Dashboard",
+            icon: LayoutDashboard,
+            href: "/dashboard/client",
+          },
 
-  {
-    label: "Create Ticket",
-    icon: FilePlus,
-    href: "/dashboard/client/create-ticket",
-  },
+          {
+            label: "Create Ticket",
+            icon: FilePlus,
+            href: "/dashboard/client/create-ticket",
+          },
 
-  {
-    label: "Track Requests",
-    icon: Search,
-    href: "/dashboard/client/track",
-  },
+          {
+            label: "Track Requests",
+            icon: History,
+            href: "/dashboard/client/tickets",
+          },
 
-  {
-    label: "History",
-    icon: History,
-    href: "/dashboard/client/history",
-  },
+          // {
+          //   label: "History",
+          //   icon: History,
+          //   href: "/dashboard/client/history",
+          // },
 
-  {
-    label: "Feedback",
-    icon: MessageSquare,
-    href: "/dashboard/client/feedback",
-  },
+          {
+            label: "Feedback",
+            icon: MessageSquare,
+            href: "/dashboard/client/feedback",
+          },
 
-  {
-    label: "Profile",
-    icon: User,
-    href: "/dashboard/client/profile",
-  },
-]
+          // {
+          //   label: "Profile",
+          //   icon: User,
+          //   href: "/dashboard/client/profile",
+          // },
+        ]
     : [];
-  const { collapsed, toggleSidebar } = useSidebar();
+  const { collapsed, toggleSidebar } = useDashboard();
 
   const width = collapsed ? "w-20" : "w-74";
 
   return (
     <aside
       className={`
-        fixed left-0 h-screen top-10
-        bg-white border-r shadow-sm p-4 transition-all
+        fixed left-0 h-screen 
+        bg-white border-r shadow-sm p-4 pt-8 transition-all
         ${width}
       `}
     >

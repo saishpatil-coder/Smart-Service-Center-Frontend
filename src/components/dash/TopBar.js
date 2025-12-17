@@ -4,9 +4,12 @@ import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import { LogOut, Search, Circle, Menu } from "lucide-react";
 import { logout } from "@/services/auth.service";
+import { toast } from "react-toastify";
+import { useDashboard } from "@/context/DashBoardContext";
 
 export default function DashboardTopbar() {
   const { user, setUser } = useUser();
+  const {search , setSearch} = useDashboard();
   const router = useRouter();
 
   if (!user) return null;
@@ -16,6 +19,7 @@ export default function DashboardTopbar() {
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    toast("Logged out successfully", { type: "success" });
     router.push("/login");
   };
 
@@ -42,6 +46,8 @@ export default function DashboardTopbar() {
       <div className="hidden md:flex items-center bg-white/20 px-3 py-1 rounded-lg w-80">
         <Search size={18} className="text-white/80" />
         <input
+        value={search}
+        onChange={(e)=>setSearch(e.target.value)}
           type="text"
           placeholder="Search ticket/job..."
           className="bg-transparent outline-none ml-2 text-sm placeholder-white/70 text-white w-full"

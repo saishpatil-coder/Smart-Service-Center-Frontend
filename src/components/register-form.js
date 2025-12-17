@@ -15,6 +15,7 @@ import { register } from "@/services/auth.service";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 export function RegisterForm({ className, ...props }) {
   const [data, setData] = useState({
@@ -59,6 +60,8 @@ export function RegisterForm({ className, ...props }) {
       );
 
       console.log("User Registered:", res);
+            toast(response.message || "Login successful!");
+
 
       // Optional redirect
       router.push("/dashboard/client");
