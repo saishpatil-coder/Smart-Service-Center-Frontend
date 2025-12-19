@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getAllMechanics, deleteMechanic } from "@/services/admin.service";
 import {
   Trash2,
@@ -10,149 +10,221 @@ import {
   Phone,
   Mail,
   ShieldCheck,
+  Search,
+  MoreVertical,
+  Calendar,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
-
-
+import { cn } from "@/lib/utils";
 
 export default function MechanicsPage() {
   const [mechanics, setMechanics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   async function loadMechanics() {
     try {
       const res = await getAllMechanics();
       setMechanics(res.data || []);
     } catch (err) {
-      console.error(err);
+      toast.error("Failed to load mechanics database");
     } finally {
       setLoading(false);
     }
   }
 
-async function handleDelete(id) {
-  toast.warning("Delete mechanic?", {
-    description: "This action cannot be undone.",
-    action: {
-      label: "Delete",
-      onClick: async () => {
-        try {
-          setDeletingId(id);
-          await deleteMechanic(id);
-          setMechanics((prev) => prev.filter((m) => m.id !== id));
-          toast.success("Mechanic deleted successfully");
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to delete mechanic");
-        } finally {
-          setDeletingId("");
-        }
+  const filteredMechanics = useMemo(() => {
+    return mechanics.filter(
+      (m) =>
+        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [mechanics, searchQuery]);
+
+  async function handleDelete(id, name) {
+    toast.warning(`Remove ${name}?`, {
+      description: "This mechanic will no longer be able to access the portal.",
+      action: {
+        label: "Remove",
+        onClick: async () => {
+          try {
+            setDeletingId(id);
+            await deleteMechanic(id);
+            setMechanics((prev) => prev.filter((m) => m.id !== id));
+            toast.success(`${name} has been removed.`);
+          } catch (err) {
+            toast.error("Failed to remove mechanic. Access denied.");
+          } finally {
+            setDeletingId("");
+          }
+        },
       },
-    },
-  });
-}
+    });
+  }
 
   useEffect(() => {
     loadMechanics();
   }, []);
 
   return (
-    <div className="space-y-8">
-      <Toaster richColors position="top-right" />{/* HEADER */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Users size={32} className="text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">Mechanics</h1>
+    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+      <Toaster richColors position="top-right" />
+
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+            <Users size={32} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Workshop Team
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              Manage and monitor technician performance
+            </p>
+          </div>
         </div>
 
         <Link
-          href="/dashboard/admin/add-mechanic"
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
+          href="/dashboard/admin/mechanics/add"
+          className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 font-bold text-sm"
         >
-          <UserPlus size={20} />
-          Add Mechanic
+          <UserPlus size={18} />
+          Add Technician
         </Link>
       </div>
-      {/* LOADING */}
-      {loading && (
-        <div className="flex justify-center py-20">
-          <Loader2 className="animate-spin text-blue-600" size={36} />
-        </div>
-      )}
-      {/* EMPTY STATE */}
-      {!loading && mechanics.length === 0 && (
-        <div className="text-center py-16 bg-white shadow rounded-xl">
-          <Users size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">No mechanics found.</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Add new mechanics to start assigning tickets.
+
+      {/* SEARCH AND FILTERS */}
+      <div className="relative group max-w-md">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
+          size={20}
+        />
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-sm font-medium"
+        />
+      </div>
+
+      {/* CONTENT AREA */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Loader2 className="animate-spin text-blue-600" size={40} />
+          <p className="text-slate-500 font-medium italic">
+            Loading technician directory...
           </p>
         </div>
-      )}
-      {/* MECHANICS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {mechanics.map((m) => (
-          <div
-            key={m.id}
-            className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-all relative"
-          >
-            {/* Clickable Area */}
-            <Link
-              href={`/dashboard/admin/mechanics/${m.id}`}
-              className="block p-6"
+      ) : filteredMechanics.length === 0 ? (
+        <div className="text-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl">
+          <div className="bg-white p-4 rounded-full w-fit mx-auto shadow-sm mb-4">
+            <Users size={48} className="text-slate-300" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">
+            No technicians found
+          </h3>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+            Try adjusting your search query or add a new team member.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredMechanics.map((m) => (
+            <div
+              key={m.id}
+              className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 relative overflow-hidden"
             >
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {m.name}
-                </h2>
+              {/* Status Ribbon */}
+              <div
+                className={cn(
+                  "absolute top-0 right-0 h-1 w-24",
+                  m.status === "ACTIVE" ? "bg-emerald-500" : "bg-red-500"
+                )}
+              />
 
-                <p className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Mail size={16} /> {m.email}
-                </p>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex gap-4">
+                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xl border-2 border-white shadow-sm">
+                      {m.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {m.name}
+                      </h2>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                        Technical Staff
+                      </p>
+                    </div>
+                  </div>
 
-                <p className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Phone size={16} /> {m.mobile}
-                </p>
-
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-md bg-blue-100 text-blue-700">
-                    <ShieldCheck size={14} /> MECHANIC
-                  </span>
-
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-md ${
-                      m.status === "ACTIVE"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                  <button
+                    disabled={deletingId === m.id}
+                    onClick={() => handleDelete(m.id, m.name)}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all active:scale-90"
                   >
-                    {m.status}
-                  </span>
+                    {deletingId === m.id ? (
+                      <Loader2 className="animate-spin" size={20} />
+                    ) : (
+                      <Trash2 size={20} />
+                    )}
+                  </button>
                 </div>
 
-                <p className="text-xs text-gray-400 mt-1">
-                  Joined on {new Date(m.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </Link>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                  <div className="flex items-center gap-2 text-slate-600 text-sm bg-slate-50 p-2 rounded-lg">
+                    <Mail size={16} className="text-slate-400" />
+                    <span className="truncate font-medium">{m.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 text-sm bg-slate-50 p-2 rounded-lg">
+                    <Phone size={16} className="text-slate-400" />
+                    <span className="font-medium">{m.mobile}</span>
+                  </div>
+                </div>
 
-            {/* Delete Button (absolute so it doesn’t trigger link) */}
-            <button
-              disabled={deletingId === m.id}
-              onClick={() => handleDelete(m.id)}
-              className="absolute top-4 right-4 text-red-600 hover:bg-red-50 p-2 rounded-lg transition"
-            >
-              {deletingId === m.id ? (
-                <Loader2 className="animate-spin" size={18} />
-              ) : (
-                <Trash2 size={20} />
-              )}
-            </button>
-          </div>
-        ))}
-      </div>
+                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border",
+                        m.status === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : "bg-red-50 text-red-700 border-red-100"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          m.status === "ACTIVE"
+                            ? "bg-emerald-500"
+                            : "bg-red-500"
+                        )}
+                      />
+                      {m.status}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
+                      <ShieldCheck size={12} /> Certified
+                    </span>
+                  </div>
+
+                  <Link
+                    href={`/dashboard/admin/mechanics/${m.id}`}
+                    className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:gap-2 transition-all"
+                  >
+                    View Performance <ChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

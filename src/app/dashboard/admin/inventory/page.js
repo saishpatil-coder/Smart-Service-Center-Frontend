@@ -21,6 +21,18 @@ export default function InventoryPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+  const handleDelete = async (itemId) => {
+    if (!confirm("Are you sure you want to delete this item?")) {
+      return;
+    }
+    try {
+      await api.delete(`/admin/inventory/${itemId}`);
+      setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      toast.success("Item deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete item");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -37,7 +49,7 @@ export default function InventoryPage() {
         </div>
 
         <Link
-          href="/admin/inventory/add"
+          href="/dashboard/admin/inventory/add"
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={16} />
@@ -56,8 +68,10 @@ export default function InventoryPage() {
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Unit Price (₹)</th>
-              <th className="px-4 py-3">Status</th>
+              {/* <th className="px-4 py-3">Status</th> */}
+             <th className="px-4 py-3">Actions</th> 
             </tr>
+
           </thead>
 
           <tbody>
@@ -102,7 +116,7 @@ export default function InventoryPage() {
                     </td>
 
                     <td className="px-4 py-3">₹{item.unitPrice}</td>
-
+{/* 
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -113,7 +127,14 @@ export default function InventoryPage() {
                       >
                         {item.isActive ? "Active" : "Inactive"}
                       </span>
-                    </td>
+                    </td> */}
+                    <td className="px-4 py-3">
+                      <button
+                      onClick={() => handleDelete(item.id)}
+                      className="rounded-md bg-red-100 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-200">
+                        Delete
+                      </button>
+                      </td>
                   </tr>
                 );
               })
