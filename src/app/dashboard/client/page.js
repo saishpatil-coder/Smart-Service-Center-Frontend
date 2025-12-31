@@ -229,7 +229,7 @@ export default function ClientDashboardPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push("/dashboard/client/create")}
+          onClick={() => router.push("/dashboard/client/create-ticket")}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg shadow-blue-200 transition-all active:scale-95 text-sm"
         >
           + New Request

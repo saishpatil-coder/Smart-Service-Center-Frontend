@@ -1,53 +1,60 @@
-import {
-  Wrench,
-  Car,
-  ClipboardList,
-  Info,
-  Settings,
-  ThumbsUp,
-  RefreshCw,
-} from "lucide-react";
+"use client";
+
+import { Ticket, Wrench, Package, ShieldCheck } from "lucide-react";
 
 export default function Features() {
-  const items = [
-    { icon: <Wrench className="w-7 h-7 text-blue-600" />, label: "Repairs" },
-    { icon: <Car className="w-7 h-7 text-blue-600" />, label: "Maintenance" },
+  const features = [
     {
-      icon: <ClipboardList className="w-7 h-7 text-blue-600" />,
-      label: "Tracking",
+      title: "Smart Ticketing",
+      desc: "Automated SLA tracking and escalation for high-priority vehicle repairs.",
+      icon: <Ticket className="text-blue-600" />,
     },
-    { icon: <Info className="w-7 h-7 text-blue-600" />, label: "Services" },
     {
-      icon: <Settings className="w-7 h-7 text-blue-600" />,
-      label: "Recommend",
+      title: "Technician Dispatch",
+      desc: "Intelligent assignment logic based on mechanic workload and expertise.",
+      icon: <Wrench className="text-emerald-600" />,
     },
-    { icon: <RefreshCw className="w-7 h-7 text-blue-600" />, label: "Tips" },
-    { icon: <ThumbsUp className="w-7 h-7 text-blue-600" />, label: "Updates" },
+    {
+      title: "Inventory Intelligence",
+      desc: "Real-time parts tracking with automated low-stock critical alerts.",
+      icon: <Package className="text-amber-600" />,
+    },
+    {
+      title: "SLA Integrity",
+      desc: "Guaranteed turnaround times with built-in escalation monitoring.",
+      icon: <ShieldCheck className="text-indigo-600" />,
+    },
   ];
 
   return (
-    <section className="py-24 max-w-7xl mx-auto px-6">
-      <h2 className="text-4xl font-bold mb-12 text-gray-900">
-        In my <span className="text-blue-600">GARAGE</span>
-      </h2>
-
-      <div className="grid grid-cols-3 md:grid-cols-7 gap-10 text-center">
-        {items.map((item, i) => (
-          <div key={i} className="flex flex-col items-center group transition">
-            {/* Icon Box */}
+    <section className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="text-sm font-black text-blue-600 uppercase tracking-[0.3em] mb-4">
+            Core Infrastructure
+          </h2>
+          <p className="text-4xl font-black text-slate-900 tracking-tight">
+            Everything you need to run a high-output workshop.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((f, i) => (
             <div
-              className="p-6 bg-blue-50 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.05)]
-                            group-hover:bg-blue-100 transition"
+              key={i}
+              className="group p-8 rounded-[2rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500"
             >
-              {item.icon}
+              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                {f.icon}
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">
+                {f.title}
+              </h3>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                {f.desc}
+              </p>
             </div>
-
-            {/* Label */}
-            <p className="mt-3 text-sm font-medium text-gray-700 group-hover:text-blue-600 transition">
-              {item.label}
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );

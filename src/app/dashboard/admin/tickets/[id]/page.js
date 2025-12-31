@@ -13,13 +13,16 @@ import {
   Clock,
   ShieldCheck,
   ExternalLink,
+  CreditCard,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import TicketTimeline from "@/components/TicketTimeline";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-export default function TicketDetailsPage(props) {
+export default function AdminTicketDetailsPage(props) {
   const router = useRouter();
   const param = use(props.params);
   const id = param.id;
@@ -47,7 +50,7 @@ export default function TicketDetailsPage(props) {
 
   if (!ticket)
     return (
-      <div className="text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed">
+      <div className="text-center py-20 bg-slate-50 rounded-2xl border-2 border-dashed mx-4">
         <p className="text-slate-500 font-medium">
           Ticket system record not found.
         </p>
@@ -64,7 +67,7 @@ export default function TicketDetailsPage(props) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="max-w-6xl mx-auto space-y-8 pb-12 px-4">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
         <button
@@ -77,11 +80,16 @@ export default function TicketDetailsPage(props) {
           />
           Back to Ticket Console
         </button>
-        <div className="flex gap-2">
-          {/* Placeholder for Admin Actions like Re-assign or Cancel */}
-          <span className="text-xs text-slate-400 font-mono">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-slate-400 font-mono hidden md:block">
             Record ID: {ticket.id}
           </span>
+          {/* Action: Mark as Paid manually if needed */}
+          {!ticket.isPaid && ticket.status === "COMPLETED" && (
+            <button className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100">
+              Mark as Paid
+            </button>
+          )}
         </div>
       </div>
 
@@ -90,16 +98,34 @@ export default function TicketDetailsPage(props) {
         <div className="lg:col-span-2 space-y-6">
           <header className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <span
-                  className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
-                    statusStyles[ticket.status]
-                  )}
-                >
-                  {ticket.status}
-                </span>
-                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={cn(
+                      "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border",
+                      statusStyles[ticket.status]
+                    )}
+                  >
+                    {ticket.status}
+                  </span>
+                  {/* NEW: Payment Status Badge */}
+                  <span
+                    className={cn(
+                      "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1",
+                      ticket.isPaid
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-slate-100 text-slate-500 border-slate-300"
+                    )}
+                  >
+                    {ticket.isPaid ? (
+                      <CheckCircle2 size={10} />
+                    ) : (
+                      <Clock size={10} />
+                    )}
+                    {ticket.isPaid ? "Payment Verified" : "Awaiting Settlement"}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
                   {ticket.title}
                 </h1>
               </div>
@@ -132,101 +158,148 @@ export default function TicketDetailsPage(props) {
 
         {/* Sidebar Insights */}
         <div className="space-y-6">
-          {/* Entity Linkage Cards */}
+          {/* NEW: Financial & Payment Reconciliation Card */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
-              <ShieldCheck size={18} className="text-blue-600" />
-              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">
-                Stakeholder View
+            <div className="p-4 bg-slate-900 text-white flex items-center gap-2">
+              <CreditCard size={18} className="text-blue-400" />
+              <h3 className="font-bold text-xs uppercase tracking-widest">
+                Financial Audit
               </h3>
             </div>
-
-            <div className="p-5 space-y-6">
-              {/* Client Section */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                  <User size={12} /> Primary Client
-                </label>
-                <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100 flex justify-between items-center group cursor-pointer hover:bg-blue-50 transition-colors">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">
-                      {ticket.client?.name || "Anonymous"}
-                    </p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {ticket.client?.email || "N/A"}
-                    </p>
-                  </div>
-                  <ExternalLink
-                    size={14}
-                    className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </div>
+            <div className="p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-500 font-medium uppercase">
+                  Service Fee
+                </span>
+                <span className="text-lg font-black text-slate-900 flex items-center">
+                  <IndianRupee size={16} /> {ticket.cost || 0}
+                </span>
               </div>
 
-              {/* Mechanic Section */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                  <Wrench size={12} /> Assigned Technician
-                </label>
-                {ticket.mechanic ? (
-                  <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 flex justify-between items-center group cursor-pointer hover:bg-emerald-50 transition-colors">
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        {ticket.mechanic.name}
+              <div className="pt-4 border-t border-slate-100">
+                <div
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-xl border",
+                    ticket.isPaid
+                      ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                      : "bg-red-50 border-red-100 text-red-700"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {ticket.isPaid ? (
+                      <ShieldCheck size={18} />
+                    ) : (
+                      <XCircle size={18} />
+                    )}
+                    <div className="leading-none">
+                      <p className="text-[10px] font-black uppercase tracking-tighter">
+                        Status
                       </p>
-                      <p className="text-xs text-emerald-600 font-medium italic">
-                        Certified Personnel
+                      <p className="text-xs font-bold">
+                        {ticket.isPaid
+                          ? "TRANSACTION CLEARED"
+                          : "OUTSTANDING DUES"}
                       </p>
                     </div>
-                    <ExternalLink
-                      size={14}
-                      className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
                   </div>
-                ) : (
-                  <div className="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300 text-center">
-                    <p className="text-xs text-slate-400 italic">
-                      No technician assigned yet
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Financial Summary */}
-              <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Base Cost
-                  </label>
-                  <p className="text-lg font-black text-slate-900 flex items-center gap-1">
-                    <IndianRupee size={16} /> {ticket.cost}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Severity
-                  </label>
-                  <p className="text-sm font-bold text-red-600 capitalize">
-                    {ticket.severityName}
-                  </p>
+                  {ticket.isPaid && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-black uppercase tracking-tighter">
+                        Method
+                      </p>
+                      <p className="text-xs font-bold">
+                        {ticket.paymentMethod || "ONLINE"}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Time Compliance Card */}
-          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 space-y-4">
-            <div className="flex items-center gap-2 text-blue-400">
+          {/* Stakeholder View */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+              <User size={18} className="text-blue-600" />
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">
+                Stakeholder View
+              </h3>
+            </div>
+            <div className="p-5 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Client Account
+                </label>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center group cursor-pointer hover:bg-white transition-all">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {ticket.client?.name || "Anonymous"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {ticket.client?.email || "N/A"}
+                    </p>
+                  </div>
+                  <ExternalLink size={14} className="text-blue-400 shrink-0" />
+                </div>
+              </div>
+              {ticket.status === "CANCELLED" && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-sm">
+                  <p>
+                    <b>Cancelled By:</b> {ticket.cancelledBy}
+                  </p>
+                  <p>
+                    <b>Reason:</b> {ticket.cancellationReason}
+                  </p>
+                  <p>
+                    <b>Cancelled At:</b>{" "}
+                    {new Date(ticket.cancelledAt).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Assigned Technician
+                </label>
+                {ticket.mechanic ? (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center group cursor-pointer hover:bg-white transition-all">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 truncate">
+                        {ticket.mechanic.name}
+                      </p>
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter">
+                        Active Duty
+                      </p>
+                    </div>
+                    <ExternalLink
+                      size={14}
+                      className="text-emerald-400 shrink-0"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300 text-center">
+                    <p className="text-xs text-slate-400 italic font-medium">
+                      Technician not assigned
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SLA Tracking */}
+          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 space-y-4 relative overflow-hidden">
+            <div className="flex items-center gap-2 text-blue-400 relative z-10">
               <Clock size={18} />
-              <h3 className="font-bold text-sm uppercase tracking-widest">
-                SLA Compliance
+              <h3 className="font-bold text-xs uppercase tracking-widest">
+                SLA Performance
               </h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 relative z-10">
               <div className="flex justify-between items-end border-b border-white/10 pb-2">
-                <span className="text-xs text-slate-400 font-medium">
-                  Ticket Created
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  Log Created
                 </span>
                 <span className="text-xs font-mono">
                   {new Date(ticket.createdAt).toLocaleDateString()}
@@ -234,20 +307,20 @@ export default function TicketDetailsPage(props) {
               </div>
 
               {ticket.status === "COMPLETED" ? (
-                <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
-                  <p className="text-[10px] text-emerald-400 font-bold uppercase mb-1">
-                    Final Resolution
+                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+                  <p className="text-[9px] text-emerald-400 font-bold uppercase mb-1 tracking-widest">
+                    Resolution Timestamp
                   </p>
-                  <p className="text-sm font-bold">
+                  <p className="text-xs font-bold">
                     {new Date(ticket.completedAt).toLocaleString()}
                   </p>
                 </div>
               ) : (
-                <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20">
-                  <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">
-                    Target Completion
+                <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+                  <p className="text-[9px] text-blue-400 font-bold uppercase mb-1 tracking-widest">
+                    Target Deadline
                   </p>
-                  <p className="text-sm font-bold">
+                  <p className="text-xs font-bold">
                     {new Date(ticket.expectedCompletionAt).toLocaleString()}
                   </p>
                 </div>

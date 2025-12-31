@@ -3,117 +3,127 @@
 import { APP_NAME } from "@/constants/app";
 import { useUser } from "@/context/UserContext";
 import { logout } from "@/services/auth.service";
-import { Pointer } from "lucide-react";
+import {
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+  User as UserIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
-  const {user,loading,setUser} = useUser();
-  const router = useRouter()
+  const { user, loading, setUser } = useUser();
+  const router = useRouter();
 
-  const handleLogout = async ()=>{
+  const handleLogout = async () => {
     await logout();
     setUser(null);
+    setOpenMenu(false);
     router.push("/login");
-  }
+  };
+
+  const navigateToDashboard = () => {
+    const role = user?.role?.toLowerCase();
+    setOpenMenu(false);
+    if (role === "admin") router.push("/dashboard/admin");
+    else if (role === "mechanic") router.push("/dashboard/mechanic");
+    else router.push("/dashboard/client");
+  };
 
   return (
-    <nav className="w-full z-50 bg-[#6CA8F7] shadow-md fixed">
-      {/* MAIN NAV */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
-        {/* Logo */}
-        <Link href="/" className="text-2xl font-bold text-white tracking-wide">
+    <nav className="w-full z-50 bg-[#6CA8F7]/95 backdrop-blur-md shadow-lg fixed top-0 border-b border-white/10">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        {/* LOGO */}
+        <Link
+          href="/"
+          className="text-2xl font-black text-white tracking-tighter uppercase italic hover:opacity-90 transition-opacity"
+        >
           {APP_NAME}
         </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-10 text-lg text-white font-medium">
-          <Link href="/">Home</Link>
-          <Link href="/book">Book</Link>
-          <Link href="/track">Track</Link>
-          <Link href="/contact">Contact</Link>
+        {/* DESKTOP LINKS - Cleaned & Categorized */}
+        <div className="hidden md:flex items-center gap-8 text-[11px] font-black text-white uppercase tracking-[0.2em]">
+          <Link href="/" className="hover:text-blue-100 transition-colors">
+            Home
+          </Link>
+          <Link href="/book" className="hover:text-blue-100 transition-colors">
+            Book Service
+          </Link>
+          <Link href="/track" className="hover:text-blue-100 transition-colors">
+            Track Status
+          </Link>
         </div>
 
-        {/* Login Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* AUTH ACTIONS */}
+        <div className="hidden md:flex items-center gap-5">
           {!user ? (
             <>
               <Link
-                onClick={() => setOpen(false)}
                 href="/login"
-                className="text-white font-medium hover:underline"
+                className="text-white text-xs font-black uppercase tracking-widest hover:text-blue-50 transition-all"
               >
                 Login
               </Link>
-
               <Link
-                onClick={() => setOpen(false)}
                 href="/register"
-                className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold"
+                className="bg-white text-blue-600 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/20 active:scale-95 transition-all"
               >
-                Sign Up
+                Get Started
               </Link>
             </>
           ) : (
             <div className="relative">
-              {/* Avatar Button */}
               <button
                 onClick={() => setOpenMenu((prev) => !prev)}
-                className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold flex items-center justify-center shadow-md hover:scale-105 transition"
+                className="flex items-center gap-3 bg-white/10 border border-white/20 pl-2 pr-4 py-1.5 rounded-2xl hover:bg-white/20 transition-all group"
               >
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                <div className="w-8 h-8 rounded-xl bg-white text-blue-600 font-black flex items-center justify-center shadow-sm">
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  {user?.name?.split(" ")[0]}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={cn(
+                    "text-white/70 transition-transform duration-300",
+                    openMenu && "rotate-180"
+                  )}
+                />
               </button>
 
-              {/* Dropdown Menu */}
+              {/* DROPDOWN */}
               {openMenu && (
-                <div className="absolute right-0 mt-3 w-56 bg-white shadow-lg rounded-lg p-4 z-50 animate-in fade-in zoom-in">
-                  {/* User Info Block */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-
-                    <div>
-                      <h3 className="text-gray-800 font-semibold">
-                        {user?.name || "User"}
-                      </h3>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                    </div>
+                <div className="absolute right-0 mt-4 w-64 bg-white shadow-2xl rounded-3xl p-2 z-50 animate-in fade-in zoom-in duration-200 border border-slate-100">
+                  <div className="p-4 bg-slate-50 rounded-2xl mb-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      Authenticated as
+                    </p>
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {user?.name}
+                    </p>
+                    <span className="mt-2 inline-block text-[10px] px-2 py-0.5 rounded-lg bg-blue-600 text-white font-black uppercase tracking-tighter">
+                      {user?.role}
+                    </span>
                   </div>
 
-                  {/* Role Badge */}
-                  <span className="mt-3 inline-block text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-semibold">
-                    {user?.role || "CLIENT"}
-                  </span>
-
-                  <hr className="my-3" />
-
-                  {/* Go to Dashboard */}
                   <button
-                    style={{
-                      cursor: Pointer,
-                    }}
-                    onClick={() => {
-                      const role = user?.role?.toLowerCase();
-
-                      if (role === "admin") router.push("/dashboard/admin");
-                      else if (role === "mechanic")
-                        router.push("/dashboard/mechanic");
-                      else router.push("/dashboard/client");
-                    }}
-                    className="w-full text-left text-blue-600 hover:bg-blue-50 px-2 py-2 rounded-md transition font-medium"
+                    onClick={navigateToDashboard}
+                    className="w-full flex items-center gap-3 text-left text-slate-600 hover:text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-wider"
                   >
-                    Go to Dashboard
+                    <LayoutDashboard size={16} /> Control Center
                   </button>
 
-                  {/* Logout */}
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left text-red-600 hover:bg-red-50 px-2 py-2 rounded-md transition font-medium"
+                    className="w-full flex items-center gap-3 text-left text-red-500 hover:bg-red-50 px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-wider mt-1"
                   >
-                    Logout
+                    <LogOut size={16} /> Terminate Session
                   </button>
                 </div>
               )}
@@ -121,9 +131,9 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger */}
+        {/* MOBILE TRIGGER */}
         <button
-          className="md:hidden text-white text-3xl"
+          className="md:hidden text-white p-2"
           onClick={() => setOpen(!open)}
         >
           {open ? "✕" : "☰"}
@@ -132,101 +142,35 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="bg-[#6CA8F7] px-6 pb-4 md:hidden text-white space-y-4">
-          <Link href="/" className="block">
-            Home
-          </Link>
-          <Link href="/book" className="block">
-            Book
-          </Link>
-          <Link href="/track" className="block">
-            Track
-          </Link>
-          <Link href="/contact" className="block">
-            Contact
-          </Link>
-
-          {!user ? (
-            <>
+        <div className="bg-[#6CA8F7] px-6 py-8 md:hidden border-t border-white/10 space-y-6 animate-in slide-in-from-top">
+          <div className="flex flex-col gap-4 text-xs font-black uppercase tracking-[0.2em] text-white">
+            <Link href="/" onClick={() => setOpen(false)}>
+              Home
+            </Link>
+            <Link href="/book" onClick={() => setOpen(false)}>
+              Book Service
+            </Link>
+            <Link href="/track" onClick={() => setOpen(false)}>
+              Track Status
+            </Link>
+          </div>
+          <div className="pt-6 border-t border-white/10">
+            {!user ? (
               <Link
-                onClick={() => setOpen(false)}
                 href="/login"
-                className="text-white font-medium hover:underline"
+                className="block w-full text-center bg-white text-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs"
               >
-                Login
+                Login / Register
               </Link>
-
-              <Link
-                onClick={() => setOpen(false)}
-                href="/register"
-                className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold"
-              >
-                Sign Up
-              </Link>
-            </>
-          ) : (
-            <div className="relative">
-              {/* Avatar Button */}
+            ) : (
               <button
-                onClick={() => setOpenMenu((prev) => !prev)}
-                className="w-10 h-10 rounded-full bg-white text-blue-600 font-bold flex items-center justify-center shadow-md hover:scale-105 transition"
+                onClick={navigateToDashboard}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2"
               >
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                <LayoutDashboard size={18} /> Open Dashboard
               </button>
-
-              {/* Dropdown Menu */}
-              {openMenu && (
-                <div className="absolute right-0 mt-3 w-52 bg-white shadow-lg rounded-lg p-4 z-50 animate-in fade-in zoom-in">
-                  {/* User Info Block */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
-
-                    <div>
-                      <h3 className="text-gray-800 font-semibold">
-                        {user?.name || "User"}
-                      </h3>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                    </div>
-                  </div>
-
-                  {/* Role Badge */}
-                  <span className="mt-3 inline-block text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-700 font-semibold">
-                    {user?.role || "CLIENT"}
-                  </span>
-
-                  {/* Go to Dashboard */}
-                  <button
-                    style={{
-                      cursor: Pointer,
-                    }}
-                    onClick={() => {
-                      const role = user?.role?.toLowerCase();
-
-                      if (role === "admin") router.push("/dashboard/admin");
-                      else if (role === "mechanic")
-                        router.push("/dashboard/mechanic");
-                      else router.push("/dashboard/client");
-                    }}
-                    className="w-full text-left text-blue-600 hover:bg-blue-50 px-2 py-2 rounded-md transition font-medium"
-                  >
-                    Go to Dashboard
-                  </button>
-
-                  <hr className="my-3" />
-
-                  {/* Actions */}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left text-red-600 hover:bg-red-50 px-2 py-2 rounded-md transition"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </nav>

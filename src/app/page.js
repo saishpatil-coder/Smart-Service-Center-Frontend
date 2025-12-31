@@ -1,21 +1,17 @@
-import CTASection from "@/components/landingpage/CTASection";
+import CTA from "@/components/landingpage/CTA";
 import Features from "@/components/landingpage/Features";
 import Hero from "@/components/landingpage/Hero";
-import HowItWorks from "@/components/landingpage/HowItWorks";
-import SearchCenter from "@/components/landingpage/SearchCenter";
-import Testimonials from "@/components/landingpage/Testimonials";
-import TopCenters from "@/components/landingpage/TopCenters";
+import Stats from "@/components/landingpage/Stats";
+import Workflow from "@/components/landingpage/WorkFlow";
 
 export default function Home() {
   return (
     <div className="bg-gray-50">
       <Hero />
-      <SearchCenter />
-      <TopCenters />
-      <HowItWorks />
-      <Features />
-      <Testimonials />
-      <CTASection />
+      <Features/>
+      <Stats/>
+      <Workflow/>
+      <CTA/>
     </div>
   );
 }
