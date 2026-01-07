@@ -50,8 +50,11 @@ if (res.data.user) {
     // Wait for cookie to be accessible by the browser/axios
   
     setTimeout(() => {
-      console.log("registering");
+      async function a(){
+        console.log("registering");
       await registerFCMTokenAfterLogin();
+      }
+      a();
     }, 5000); 
   }
       setUser(response.user);
