@@ -50,7 +50,7 @@ if (res.data.user) {
     // Wait for cookie to be accessible by the browser/axios
     setTimeout(() => {
       await registerFCMTokenAfterLogin();
-    }, 500); 
+    }, 5000); 
   }
       setUser(response.user);
       let role = response.user.role;
