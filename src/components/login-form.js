@@ -46,8 +46,12 @@ export function LoginForm({ className, ...props }) {
 
     try {
       let response = await login(data.email, data.password);
+if (res.data.user) {
+    // Wait for cookie to be accessible by the browser/axios
+    setTimeout(() => {
       await registerFCMTokenAfterLogin();
-
+    }, 500); 
+  }
       setUser(response.user);
       let role = response.user.role;
       toast(response.message || "Login successful!");
