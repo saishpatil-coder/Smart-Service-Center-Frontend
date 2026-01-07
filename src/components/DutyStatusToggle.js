@@ -118,23 +118,7 @@ export default function DutyStatusToggle({ status, onChange }) {
         </button>
       </div>
 
-      {/* Telemetry Status Line */}
-      <div className="flex items-center gap-2 px-3 py-1 bg-white/50 rounded-full border border-slate-100 shadow-sm">
-        <span className="relative flex h-2 w-2">
-          {localActive && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          )}
-          <span
-            className={cn(
-              "relative inline-flex rounded-full h-2 w-2",
-              localActive ? "bg-emerald-500" : "bg-slate-400"
-            )}
-          ></span>
-        </span>
-        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-          {localActive ? "Signal: Broadcasting" : "Signal: Standby"}
-        </span>
-      </div>
+
     </div>
   );
 }

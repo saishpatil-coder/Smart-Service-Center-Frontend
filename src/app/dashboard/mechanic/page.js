@@ -13,6 +13,8 @@ import {
   Radio,
   ShieldCheck,
   Zap,
+  PlayCircle,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DutyStatusToggle from "@/components/DutyStatusToggle";
@@ -53,7 +55,7 @@ export default function MechanicDashboardPage() {
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* HEADER SECTION: Command Center Style */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200">
-        <div className="space-y-1">
+        <div className="space-y-1 top-0">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
@@ -62,7 +64,7 @@ export default function MechanicDashboardPage() {
           </div>
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
             Mechanic ID: {user.id?.slice(0, 8) || "UNIT-00"}{" "}
-            <span className="h-1 w-1 rounded-full bg-slate-300" /> System Online
+            <span className="h-1 w-1 rounded-full bg-slate-300" /> {user.status=="ACTIVE"?"System Online" :"System Offline"}
           </p>
         </div>
 
@@ -117,12 +119,10 @@ export default function MechanicDashboardPage() {
             </div>
           ) : (
             tasks.map((task) => (
-              <ManifestItem
+              <TaskCard
                 key={task.id}
                 task={task}
-                onClick={() =>
-                  router.push(`/dashboard/mechanic/task/${task.ticketId}`)
-                }
+
               />
             ))
           )}
@@ -168,62 +168,90 @@ function StatCard({ icon, label, value, color, subLabel }) {
   );
 }
 
-function ManifestItem({ task, onClick }) {
+function TaskCard({ task }) {
+  const router = useRouter();
+
+  const statusConfig = {
+    ASSIGNED: {
+      color: "bg-amber-50 text-amber-700 border-amber-100",
+      icon: <PlayCircle size={16} />,
+      label: "New Assignment",
+    },
+    IN_PROGRESS: {
+      color: "bg-blue-50 text-blue-700 border-blue-100",
+      icon: <CheckCircle2 size={16} />,
+      label: "Currently Active",
+    },
+    COMPLETED: {
+      color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      icon: <Check size={16} />,
+      label: "Job Completed",
+    },
+  };
+
+  const currentStatus = statusConfig[task.status] || statusConfig.ASSIGNED;
+
   return (
     <div
-      onClick={onClick}
-      className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer flex items-center justify-between"
+      onClick={() => router.push(`/dashboard/mechanic/tasks/${task.id}`)}
+      className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-blue-300 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6"
     >
-      <div className="flex items-center gap-6">
+      <div className="flex gap-5 items-center flex-1 min-w-0">
         <div
           className={cn(
-            "w-14 h-14 rounded-xl flex flex-col items-center justify-center border-2 transition-all group-hover:rotate-2",
-            task.Ticket?.isEscalated
-              ? "bg-red-50 border-red-200 text-red-600"
-              : "bg-slate-50 border-slate-200 text-slate-600"
+            "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors",
+            task.status === "COMPLETED"
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-blue-50 text-blue-600"
           )}
         >
-          <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">
-            Rank
-          </span>
-          <span className="text-xl font-black">{task.Ticket?.priority}</span>
+          <Wrench
+            size={24}
+            className="group-hover:rotate-12 transition-transform"
+          />
         </div>
 
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize text-lg">
-              {task.Ticket?.title}
-            </h4>
-            {task.Ticket?.isEscalated && (
-              <div className="flex items-center gap-1 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded tracking-tighter animate-pulse">
-                CRITICAL
-              </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">
+            {task.title}
+          </h2>
+          <p className="text-sm text-slate-500 line-clamp-1 mb-2 font-medium">
+            {task.description || "No additional notes provided."}
+          </p>
+
+          <div className="flex flex-wrap gap-4 items-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span
+              className={cn(
+                "px-2.5 py-1 rounded-lg border flex items-center gap-1.5",
+                currentStatus.color
+              )}
+            >
+              {currentStatus.icon}
+              {currentStatus.label}
+            </span>
+            <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+              <Clock size={14} className="text-slate-400" />
+              Est: {task.expectedCompletionHours} hrs
+            </span>
+            {task.createdAt && (
+              <span className="flex items-center gap-1.5">
+                <Calendar size={14} />
+                {new Date(task.createdAt).toLocaleDateString()}
+              </span>
             )}
-          </div>
-          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <span className="flex items-center gap-1">
-              <Wrench size={10} /> {task.Ticket?.client?.name}
-            </span>
-            <span className="h-1 w-1 rounded-full bg-slate-200" />
-            <span className="flex items-center gap-1">
-              <Clock size={10} /> ID: {task.ticketId?.slice(0, 6)}
-            </span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div
-          className={cn(
-            "px-4 py-1.5 rounded-lg text-[10px] font-black tracking-widest uppercase border",
-            task.Ticket?.status === "IN_PROGRESS"
-              ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100"
-              : "bg-white text-slate-600 border-slate-200"
-          )}
-        >
-          {task.Ticket?.status}
+      <div className="flex items-center gap-4 shrink-0 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+        <div className="text-right">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+            Reference
+          </p>
+          <p className="text-sm font-mono font-bold text-slate-900">
+            #{task.id.slice(-6).toUpperCase()}
+          </p>
         </div>
-        <ChevronRight className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
       </div>
     </div>
   );
