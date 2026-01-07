@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@/services/auth.service";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
+import { registerFCMTokenAfterLogin } from "./fcm/FcmInitializer";
 
 export function LoginForm({ className, ...props }) {
   const [data, setData] = useState({
@@ -45,15 +46,22 @@ export function LoginForm({ className, ...props }) {
 
     try {
       let response = await login(data.email, data.password);
+      await registerFCMTokenAfterLogin();
+
       setUser(response.user);
-      let role = response.user.role ;
-      toast(response.message || "Login successful!",  );
+      let role = response.user.role;
+      toast(response.message || "Login successful!");
       router.push(`/dashboard/${response.user.role.toLowerCase()}`);
-      } catch (err) {
-      setError("Invalid email or password.");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Something went wrong. Please try again.";
+
+      setError(message);
     } finally {
       setSubmitting(false);
     }
+    
   };
 
   return (

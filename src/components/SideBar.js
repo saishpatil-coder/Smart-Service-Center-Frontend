@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import { useDashboard } from "@/context/DashBoardContext";
 import { APP_NAME } from "@/constants/app";
@@ -24,15 +24,29 @@ import {
   Package,
   ChevronLeft,
   LogOut,
+  ShieldAlert,
 } from "lucide-react";
+import { deleteFCMToken, logout } from "@/services/auth.service";
+import { toast } from "react-toastify";
 
 const SideBar = () => {
-  const { user, loading, logout } = useUser();
+  const { user, loading, setUser } = useUser();
   const { collapsed, toggleSidebar } = useDashboard();
   const pathname = usePathname();
-
+  const router = useRouter();
   if (loading) return <SidebarLoading />;
   if (!user) return null;
+    const handleLogout = async () => {
+      try {
+        await deleteFCMToken();
+        await logout();
+        setUser(null);
+        toast.success("Logged out successfully");
+        router.push("/login");
+      } catch (error) {
+        toast.error("Logout failed");
+      }
+    };
 
   // Configuration for Role-Based Navigation
   const menuConfig = {
@@ -52,6 +66,7 @@ const SideBar = () => {
       { label: "All Tickets", icon: Tickets, href: "/dashboard/admin/tickets" },
       { label: "Services", icon: Wrench, href: "/dashboard/admin/services" },
       { label: "Mechanics", icon: Users, href: "/dashboard/admin/mechanics" },
+      { label: "Severities", icon: ShieldAlert, href: "/dashboard/admin/severities" },
     ],
     MECHANIC: [
       {
@@ -182,7 +197,10 @@ const SideBar = () => {
         )}
 
         <button
-          onClick={() => logout?.()}
+          onClick={() =>{
+
+            handleLogout()
+          }}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors",
             collapsed && "justify-center"

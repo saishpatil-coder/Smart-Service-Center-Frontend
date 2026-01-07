@@ -74,6 +74,7 @@ export default function CreateTicketPage() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
+        e.target.value = null;
         return toast.error("Image size should be less than 5MB");
       }
       setImage(file);

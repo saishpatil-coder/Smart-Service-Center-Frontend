@@ -1,14 +1,10 @@
 import api from "@/lib/axios";
 
 export async function login(email, password) {
-  try{
     console.log("logging in")
     const res = await api.post("/auth/login", { email, password });
     console.log(res.data)
   return res.data;
-  }catch(err){
-    return null;
-  }
 }
 
 export async function register(name, mobile, email, password) {
@@ -32,4 +28,14 @@ export async function getCurrentUser() {
   }catch(err){
     return null;
   }
+}
+
+
+export async function deleteFCMToken() {
+  console.log("deleting fcm token from backend")
+  const token = localStorage.getItem("fcm_token");
+  if (!token) return;
+
+  await api.post("/users/remove-fcm-token", { token });
+  
 }

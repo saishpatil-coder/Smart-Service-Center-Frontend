@@ -2,6 +2,7 @@
 
 import SideBar from "@/components/SideBar";
 import DashboardTopbar from "@/components/dash/TopBar";
+import FCMListener from "@/components/fcm/FcmListener";
 import { APP_NAME } from "@/constants/app";
 import { useDashboard } from "@/context/DashBoardContext";
 import { usePathname } from "next/navigation";
@@ -18,10 +19,12 @@ export default function DashboardMainWrapper({ children }) {
   return (
 
     <div className="flex min-h-screen bg-slate-50/50">
+      
       {/* Sidebar is fixed inside its own component. 
         We just need to ensure the main area respects its width.
       */}
       <SideBar />
+      <FCMListener/>
 
       <div
         className={`

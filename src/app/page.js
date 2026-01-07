@@ -1,3 +1,4 @@
+"use client";
 import CTA from "@/components/landingpage/CTA";
 import Features from "@/components/landingpage/Features";
 import Hero from "@/components/landingpage/Hero";
