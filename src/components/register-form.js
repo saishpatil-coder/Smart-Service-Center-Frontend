@@ -60,11 +60,11 @@ export function RegisterForm({ className, ...props }) {
       );
 
       console.log("User Registered:", res);
-            toast(response.message || "Login successful!");
+            toast(res.message || "Login successful!");
 
 
       // Optional redirect
-      router.push("/dashboard/client");
+      router.push("/login");
     } catch (err) {
       const message =
         err?.message ||
