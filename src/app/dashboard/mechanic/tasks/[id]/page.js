@@ -37,7 +37,7 @@ export default function MechanicTaskDetailsPage(props) {
         api.get("/mechanic/inventory"),
       ]);
       setTicket(ticketRes.data.ticket);
-      console.log(ticketRes.data.ticket)
+      console.log(ticketRes.data.ticket);
       setInventory(invRes.data.items || []);
     } catch (err) {
       toast.error("Failed to load task details");
@@ -67,22 +67,33 @@ export default function MechanicTaskDetailsPage(props) {
     }
   };
 
-  const addPartsUsed = async () => {
-    if (selectedItems.length === 0) return toast.warning("Select parts first");
-    setProcessing(true);
-    try {
-      await api.post(`/mechanic/tasks/${id}/parts-used`, {
-        items: selectedItems,
-      });
-      toast.success("Parts updated successfully");
-      setSelectedItems([]);
-      await fetchData();
-    } catch (err) {
-      toast.error("Failed to update parts");
-    } finally {
-      setProcessing(false);
-    }
-  };
+const addPartsUsed = async () => {
+  if (selectedItems.length === 0) return toast.warning("Select parts first");
+
+  // Final safety check before submission
+  const overStock = selectedItems.find((item) => {
+    const invItem = inventory.find((i) => i.id === item.inventoryId);
+    return item.quantity > (invItem?.quantity || 0);
+  });
+
+  if (overStock) {
+    return toast.error(`Not enough stock for ${overStock.name}`);
+  }
+
+  setProcessing(true);
+  try {
+    await api.post(`/mechanic/tasks/${id}/parts-used`, {
+      items: selectedItems,
+    });
+    toast.success("Parts updated successfully");
+    setSelectedItems([]);
+    await fetchData();
+  } catch (err) {
+    toast.error("Failed to update parts");
+  } finally {
+    setProcessing(false);
+  }
+};
 
   if (loading)
     return (
@@ -279,42 +290,61 @@ export default function MechanicTaskDetailsPage(props) {
                 </h3>
               </div>
               <div className="max-h-72 overflow-y-auto p-4 space-y-2 no-scrollbar">
-                {inventory.map((item) => (
-                  <InventoryRow
-                    key={item.id}
-                    item={item}
-                    isSelected={selectedItems.some(
-                      (i) => i.inventoryId === item.id
-                    )}
-                    onToggle={(checked) => {
-                      if (checked) {
-                        setSelectedItems((prev) => [
-                          ...prev,
-                          {
-                            inventoryId: item.id,
-                            name: item.name,
-                            quantity: 1,
-                            unit: item.unit,
-                            unitPrice: item.unitPrice,
-                          },
-                        ]);
-                      } else {
+                {inventory.map((item) => {
+                  // Find if this item is in the selectedItems array to get its current quantity
+                  const selectedItem = selectedItems.find(
+                    (i) => i.inventoryId === item.id
+                  );
+
+                  return (
+                    <InventoryRow
+                      key={item.id}
+                      item={item}
+                      stock={item.quantity}
+                      isSelected={!!selectedItem}
+                      // Pass the quantity from selectedItems state, or default to 1
+                      currentQty={selectedItem ? selectedItem.quantity : 1}
+                      onToggle={(checked) => {
+                        if (checked) {
+                          if (item.quantity <= 0)
+                            return toast.error("Out of stock");
+                          setSelectedItems((prev) => [
+                            ...prev,
+                            {
+                              inventoryId: item.id,
+                              name: item.name,
+                              quantity: 1,
+                              unit: item.unit,
+                              unitPrice: item.unitPrice,
+                            },
+                          ]);
+                        } else {
+                          setSelectedItems((prev) =>
+                            prev.filter((i) => i.inventoryId !== item.id)
+                          );
+                        }
+                      }}
+                      onQtyChange={(val) => {
+                        // Validation logic
+                        let finalQty = val;
+                        if (val > item.quantity) {
+                          finalQty = item.quantity;
+                          toast.warn(`Only ${item.quantity} units in stock`);
+                        } else if (val < 0) {
+                          finalQty = 0;
+                        }
+
                         setSelectedItems((prev) =>
-                          prev.filter((i) => i.inventoryId !== item.id)
+                          prev.map((i) =>
+                            i.inventoryId === item.id
+                              ? { ...i, quantity: finalQty }
+                              : i
+                          )
                         );
-                      }
-                    }}
-                    onQtyChange={(val) => {
-                      setSelectedItems((prev) =>
-                        prev.map((i) =>
-                          i.inventoryId === item.id
-                            ? { ...i, quantity: val }
-                            : i
-                        )
-                      );
-                    }}
-                  />
-                ))}
+                      }}
+                    />
+                  );
+                })}
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100">
                 <button
@@ -332,43 +362,67 @@ export default function MechanicTaskDetailsPage(props) {
       </div>
     </div>
   );
-}
-
-function InventoryRow({ item, isSelected, onToggle, onQtyChange }) {
+}function InventoryRow({
+  item,
+  stock,
+  isSelected,
+  currentQty,
+  onToggle,
+  onQtyChange,
+}) {
   return (
     <div
       className={cn(
         "flex items-center gap-3 p-3 rounded-xl border transition-all",
         isSelected
           ? "border-blue-200 bg-blue-50"
-          : "border-slate-100 hover:bg-slate-50"
+          : "border-slate-100 hover:bg-slate-50",
+        stock <= 0 && "opacity-60 grayscale pointer-events-none"
       )}
     >
       <input
         type="checkbox"
+        disabled={stock <= 0}
         checked={isSelected}
         onChange={(e) => onToggle(e.target.checked)}
         className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
       />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-slate-800 truncate">{item.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-bold text-slate-800 truncate">
+            {item.name}
+          </p>
+          {stock <= 5 && stock > 0 && (
+            <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">
+              Low Stock
+            </span>
+          )}
+        </div>
         <p className="text-[10px] font-bold text-slate-400">
-          ₹{item.unitPrice} / {item.unit}
+          ₹{item.unitPrice} / {item.unit} •{" "}
+          <span className="text-blue-600">{stock} available</span>
         </p>
       </div>
       {isSelected && (
-        <input
-          type="number"
-          min={1}
-          defaultValue={1}
-          className="w-16 border border-blue-200 rounded-lg px-2 py-1 text-sm font-bold bg-white text-center"
-          onChange={(e) => onQtyChange(Number(e.target.value))}
-        />
+        <div className="flex flex-col items-end gap-1">
+          <input
+            type="number"
+            max={stock}
+            // Use the prop passed from the parent state
+            value={currentQty}
+            className="w-16 border border-blue-200 rounded-lg px-2 py-1 text-sm font-bold bg-white text-center"
+            onChange={(e) => onQtyChange(Number(e.target.value))}
+            // Prevents typing letters or decimals
+            onKeyDown={(e) =>
+              ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()
+            }
+          />
+        </div>
       )}
     </div>
   );
 }
-
+// ... (InfoItem remains the same)
 function InfoItem({ icon, label, value }) {
   return (
     <div className="space-y-1">

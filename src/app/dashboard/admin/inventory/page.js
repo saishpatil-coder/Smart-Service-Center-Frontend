@@ -14,6 +14,7 @@ export default function InventoryPage() {
     api
       .get("/admin/inventory")
       .then((res) => {
+        console.log(res.data.items)
         setItems(res.data.items || []);
       })
       .catch(() => {

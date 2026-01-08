@@ -46,20 +46,15 @@ export function LoginForm({ className, ...props }) {
 
     try {
       let response = await login(data.email, data.password);
-if (res.data.user) {
     // Wait for cookie to be accessible by the browser/axios
-  
-    setTimeout(() => {
-      async function a(){
-        console.log("registering");
-      await registerFCMTokenAfterLogin();
-      }
-      a();
-    }, 5000); 
-  }
-      setUser(response.user);
-      let role = response.user.role;
+        // console.log("registering");
+      // await registerFCMTokenAfterLogin(response.user.id);
       toast(response.message || "Login successful!");
+      setUser(response.user);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+     
+      let role = response.user.role;
       router.push(`/dashboard/${response.user.role.toLowerCase()}`);
     } catch (err) {
       const message =

@@ -2,19 +2,30 @@
 
 import SideBar from "@/components/SideBar";
 import DashboardTopbar from "@/components/dash/TopBar";
+import { registerFCMTokenAfterLogin } from "@/components/fcm/FcmInitializer";
 import FCMListener from "@/components/fcm/FcmListener";
 import { APP_NAME } from "@/constants/app";
 import { useDashboard } from "@/context/DashBoardContext";
+import { useUser } from "@/context/UserContext";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 export default function DashboardMainWrapper({ children }) {
   const { collapsed ,setSearch} = useDashboard()
+  let {user} = useUser();
 
   const pathname = usePathname()
    useEffect(() => {
      setSearch("");
    }, [pathname]);
+
+   useEffect(() => {
+     if (!user) return;
+
+     console.log("registering fcm token");
+     registerFCMTokenAfterLogin();
+   }, [user]);
+
 
   return (
 

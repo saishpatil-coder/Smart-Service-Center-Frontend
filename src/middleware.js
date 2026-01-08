@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 export function middleware(req) {
   const token = req.cookies.get("token")?.value;
+  console.log("token :",token)
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  // if (!token) {
+  //   return NextResponse.redirect(new URL("/login", req.url));
+  // }
 
   return NextResponse.next();
 }
@@ -14,3 +15,4 @@ export function middleware(req) {
 export const config = {
   matcher: ["/dashboard/:path*"],
 };
+// 
