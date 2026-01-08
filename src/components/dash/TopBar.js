@@ -84,7 +84,7 @@ export default function DashboardTopbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full h-16 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 shadow-md px-4 md:px-8 flex items-center justify-between transition-all border-b border-white/10">
+    <header className="sticky top-0 z-10 w-full h-16 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 shadow-md px-4 md:px-8 flex items-center justify-between transition-all border-b border-white/10">
       {/* LEFT: Branding */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-1 bg-white/30 rounded-full hidden md:block" />

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import SideBar from "@/components/SideBar";
 import DashboardTopbar from "@/components/dash/TopBar";
 import { registerFCMTokenAfterLogin } from "@/components/fcm/FcmInitializer";
@@ -7,62 +9,78 @@ import FCMListener from "@/components/fcm/FcmListener";
 import { APP_NAME } from "@/constants/app";
 import { useDashboard } from "@/context/DashBoardContext";
 import { useUser } from "@/context/UserContext";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 export default function DashboardMainWrapper({ children }) {
-  const { collapsed ,setSearch} = useDashboard()
-  let {user} = useUser();
+  const { collapsed, setSearch } = useDashboard();
+  const { user } = useUser();
+  const pathname = usePathname();
 
-  const pathname = usePathname()
-   useEffect(() => {
-     setSearch("");
-   }, [pathname]);
+  // 1. Reset search context on route change
+  useEffect(() => {
+    setSearch("");
+  }, [pathname, setSearch]);
 
-   useEffect(() => {
-     if (!user) return;
+  // 2. Optimized Notification Registration
+  useEffect(() => {
+    if (user?.id) {
+      const timer = setTimeout(() => {
+        registerFCMTokenAfterLogin();
+      }, 1000); // Slight delay to ensure auth cookies are fully settled
+      return () => clearTimeout(timer);
+    }
+  }, [user?.id]);
 
-     console.log("registering fcm token");
-     registerFCMTokenAfterLogin();
-   }, [user]);
-
+  // 3. Dynamic Layout Constants
+  const sidebarWidth = collapsed ? "80px" : "260px";
 
   return (
-
-    <div className="flex min-h-screen bg-slate-50/50">
-      
-      {/* Sidebar is fixed inside its own component. 
-        We just need to ensure the main area respects its width.
-      */}
+    <div className="flex min-h-screen bg-slate-50/50 selection:bg-blue-100">
+      {/* Real-time Listeners */}
       <SideBar />
-      <FCMListener/>
+      <FCMListener />
 
       <div
-        className={`
-          flex flex-col flex-1 transition-all duration-300 ease-in-out
-          ${collapsed ? "ml-20" : "ml-64"}
-        `}
+        style={{ marginLeft: sidebarWidth }}
+        className="flex flex-col flex-1 transition-all duration-300 ease-in-out min-w-0"
       >
-        {/* Topbar stays at the top. 
-          The 'sticky' class inside Topbar will handle the scroll behavior. 
-        */}
         <DashboardTopbar />
 
-        <main className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full">
-          {/* Animation Wrapper: Optional but professional. 
-             Ensures content fades in smoothly.
-          */}
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {/* Dynamic Breadcrumbs Area */}
+        <div className="px-4 md:px-8 lg:px-10 pt-6">
+          <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span className="hover:text-blue-600 cursor-pointer">Portal</span>
+            <span>/</span>
+            <span className="text-slate-900 italic">
+              {pathname.split("/").pop()?.replace("-", " ")}
+            </span>
+          </nav>
+        </div>
+
+        <main className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] w-full mx-auto">
+          {/* Main Content Animation */}
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-700 ease-out">
             {children}
           </div>
         </main>
 
-        {/* Optional Footer for Versioning/Support */}
-        <footer className="py-6 px-8 text-center text-xs text-slate-400 border-t border-slate-100">
-          © 2025 {APP_NAME} Internal Portal • v1.0.4
+        <footer className="py-8 px-10 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-100 bg-white/50 backdrop-blur-sm">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            © {new Date().getFullYear()} {APP_NAME} Infrastructure
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                Network Active
+              </span>
+            </div>
+            <span className="text-[9px] font-bold text-slate-300 uppercase">
+              v1.0.4-LTS
+            </span>
+          </div>
         </footer>
       </div>
     </div>
   );
 }
-
