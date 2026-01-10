@@ -40,6 +40,7 @@ export function LoginForm({ className, ...props }) {
       let response = await login(data.email, data.password);
       toast.success(response.message || "Access Granted");
       setUser(response.user);
+      console.log("Taking you to ",user.role," Dashboard");
       router.push(`/dashboard/${response.user.role.toLowerCase()}`);
     } catch (err) {
       const message = err.response?.data?.message || "Authentication failed.";

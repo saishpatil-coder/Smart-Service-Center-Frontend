@@ -38,11 +38,10 @@ unsubscribe = onMessage(messaging, (payload) => {
     ),
     {
       icon: "🔔",
-      autoClose: false, 
-      closeOnClick: false,
-      draggable: false,
+      autoClose: 8000, 
+      closeOnClick: true,
+      draggable: true,
       position: "top-right",
-      hideProgressBar: true,
       className: "!bg-transparent !shadow-none",
     }
   );

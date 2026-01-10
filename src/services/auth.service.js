@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 
+
 export async function login(email, password) {
     console.log("logging in")
     const res = await api.post("/auth/login", { email, password });
@@ -19,6 +20,7 @@ export async function register(name, mobile, email, password) {
 
 export async function logout() {
   await api.post("/auth/logout");
+  return ;
 }
 
 export async function getCurrentUser() {
