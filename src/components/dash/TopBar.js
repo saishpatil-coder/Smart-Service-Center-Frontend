@@ -33,6 +33,7 @@ export default function DashboardTopbar() {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close on Click Outside
@@ -73,18 +74,23 @@ export default function DashboardTopbar() {
 
   const handleLogout = async () => {
     try {
+      setLoggingOut(true);
       await deleteFCMToken();
+      sessionStorage.removeItem("fcm_sent");
       await logout();
       setUser(null);
       toast.success("Logged out successfully");
       router.push("/login");
+
     } catch (error) {
       toast.error("Logout failed");
+    } finally {
+      setLoggingOut(false);
     }
   };
 
   return (
-    <header className="sticky top-0 z-10 w-full h-16 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 shadow-md px-4 md:px-8 flex items-center justify-between transition-all border-b border-white/10">
+    <header className="sticky top-0 z-50 w-full h-16 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 shadow-md px-4 md:px-8 flex items-center justify-between transition-all border-b border-white/10">
       {/* LEFT: Branding */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-1 bg-white/30 rounded-full hidden md:block" />
@@ -272,10 +278,34 @@ export default function DashboardTopbar() {
 
           <button
             onClick={handleLogout}
+            disabled={loggingOut}
             className="flex items-center justify-center w-10 lg:w-auto lg:px-4 h-10 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-95"
             title="Sign Out"
           >
-            <LogOut size={18} />
+            {loggingOut ? (
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+            ) : (
+              <LogOut size={18} />
+            )}
             <span className="hidden lg:inline ml-2 text-xs font-bold">
               Sign Out
             </span>

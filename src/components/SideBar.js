@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
@@ -14,19 +14,16 @@ import {
   Menu,
   User,
   History,
-  MessageSquare,
   ListChecks,
   Clock,
   ListOrdered,
   Tickets,
   Users,
-  Wrench,
-  Package,
   ChevronLeft,
   LogOut,
   ShieldAlert,
-  Settings,
   Info,
+  Loader2,
 } from "lucide-react";
 import { deleteFCMToken, logout } from "@/services/auth.service";
 import { toast } from "react-toastify";
@@ -36,27 +33,39 @@ const SideBar = () => {
   const { collapsed, toggleSidebar } = useDashboard();
   const pathname = usePathname();
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  // NEW: State to track if a link has been clicked and we are waiting for the route
+  const [navigatingTo, setNavigatingTo] = useState(null);
+
+  // Reset navigating state when the pathname actually changes
+  useEffect(() => {
+    setNavigatingTo(null);
+  }, [pathname]);
 
   if (loading) return <SidebarLoading />;
   if (!user) return null;
 
   const handleLogout = async () => {
     try {
+      setLoggingOut(true);
       await deleteFCMToken();
+      sessionStorage.removeItem("fcm_sent");
       await logout();
       setUser(null);
       toast.success("Identity Disconnected");
       router.push("/login");
     } catch (error) {
       toast.error("Logout interruption");
+    }finally{
+      setLoggingOut(false);
     }
   };
 
-  // Configuration for Role-Based Navigation
   const menuConfig = {
     ADMIN: [
       { label: "Overview", icon: LayoutDashboard, href: "/dashboard/admin" },
-      { label: "Inventory", icon: Package, href: "/dashboard/admin/inventory" },
+      { label: "Inventory", icon: History, href: "/dashboard/admin/inventory" },
       {
         label: "Pending",
         icon: Clock,
@@ -97,7 +106,7 @@ const SideBar = () => {
         href: "/dashboard/client/create-ticket",
       },
       { label: "My History", icon: History, href: "/dashboard/client/tickets" },
-      { label: "Service Map", icon: Info, href: "/about" }, // Linking to your methodology page
+      { label: "Service Map", icon: Info, href: "/about" },
     ],
   };
 
@@ -106,11 +115,10 @@ const SideBar = () => {
   return (
     <aside
       className={cn(
-        "fixed left-0 over top-0 h-screen bg-white border-r border-slate-100 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] z-50 flex flex-col shadow-2xl shadow-slate-200/50",
+        "fixed left-0 top-0 h-screen bg-white border-r border-slate-100 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] z-50 flex flex-col shadow-2xl shadow-slate-200/50",
         collapsed ? "w-20" : "w-64"
       )}
     >
-      {/* Sidebar Branding Header */}
       <div className="h-24 flex items-center px-6 mb-2 relative">
         <Link
           href="/"
@@ -130,11 +138,10 @@ const SideBar = () => {
           )}
         </Link>
 
-        {/* Optimized Toggle Button */}
         <button
           onClick={toggleSidebar}
           className={cn(
-            "absolute -right-1 top-10 b text-black rounded-full p-1.5 transition-all shadow-xl active:scale-90 z-30",
+            "absolute -right-1 top-10 text-black rounded-full p-1.5 transition-all shadow-xl active:scale-90 z-30 bg-white border border-slate-100",
             collapsed && "right-6"
           )}
         >
@@ -142,7 +149,6 @@ const SideBar = () => {
         </button>
       </div>
 
-      {/* Navigation Section */}
       <nav className="flex-1 px-4 space-y-1.5 mt-4 overflow-y-auto custom-scrollbar">
         <p
           className={cn(
@@ -155,36 +161,49 @@ const SideBar = () => {
 
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
+          const isPending = navigatingTo === item.href;
           const Icon = item.icon;
 
           return (
             <Link
               key={item.label}
               href={item.href}
+              onClick={() => {
+                if (!isActive) setNavigatingTo(item.href);
+              }}
               className={cn(
                 "group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 relative",
                 isActive
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-200"
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-900",
+                isPending && "opacity-70 cursor-wait"
               )}
             >
-              <Icon
-                size={20}
-                className={cn(
-                  "shrink-0 transition-transform group-hover:scale-110 duration-300",
-                  isActive
-                    ? "text-blue-400"
-                    : "text-slate-400 group-hover:text-slate-900"
-                )}
-              />
+              {/* Show Spinner if this specific route is loading */}
+              {isPending ? (
+                <Loader2
+                  size={20}
+                  className="shrink-0 animate-spin text-blue-500"
+                />
+              ) : (
+                <Icon
+                  size={20}
+                  className={cn(
+                    "shrink-0 transition-transform group-hover:scale-110 duration-300",
+                    isActive
+                      ? "text-blue-400"
+                      : "text-slate-400 group-hover:text-slate-900"
+                  )}
+                />
+              )}
 
               {!collapsed && (
                 <span className="font-black text-[11px] uppercase tracking-widest animate-in fade-in duration-500">
                   {item.label}
+                  {isPending && "..."}
                 </span>
               )}
 
-              {/* Tooltip for Collapsed State */}
               {collapsed && (
                 <div className="absolute left-14 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all z-[60] shadow-xl">
                   {item.label}
@@ -195,7 +214,6 @@ const SideBar = () => {
         })}
       </nav>
 
-      {/* Identity & Session Footer */}
       <div className="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
         {!collapsed && (
           <div className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -229,14 +247,20 @@ const SideBar = () => {
             collapsed && "justify-center"
           )}
         >
-          <LogOut
-            size={20}
-            className="group-hover:rotate-12 transition-transform"
-          />
-          {!collapsed && (
-            <span className="text-[11px] font-black uppercase tracking-widest">
-              Terminate Session
-            </span>
+          {loggingOut ? (
+            <Loader2 size={20} className="shrink-0 animate-spin text-red-500" />
+          ) : (
+            <>
+              <LogOut
+                size={20}
+                className="group-hover:rotate-12 transition-transform"
+              />
+              {!collapsed && (
+                <span className="text-[11px] font-black uppercase tracking-widest">
+                  Terminate Session
+                </span>
+              )}
+            </>
           )}
         </button>
       </div>

@@ -24,6 +24,7 @@ export function LoginForm({ className, ...props }) {
   const { setUser } = useUser();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [success , setSuccess] = useState("")
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -40,14 +41,14 @@ export function LoginForm({ className, ...props }) {
       let response = await login(data.email, data.password);
       toast.success(response.message || "Access Granted");
       setUser(response.user);
+      setSuccess("Syncing your dashboard...");
       console.log("Taking you to ",response.user.role," Dashboard");
       router.push(`/dashboard/${response.user.role.toLowerCase()}`);
     } catch (err) {
       const message = err.response?.data?.message || "Authentication failed.";
       setError(message);
-    } finally {
       setSubmitting(false);
-    }
+    } 
   };
 
   return (
@@ -112,7 +113,11 @@ export function LoginForm({ className, ...props }) {
             {error}
           </div>
         )}
-
+        {success && (
+          <div className="text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 border border-green-600 p-3 rounded-xl text-center animate-in shake duration-300">
+            {success}
+          </div>
+        )}
         {/* Submit */}
         <Button
           type="submit"

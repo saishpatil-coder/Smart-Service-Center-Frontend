@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "@/lib/axios";
-import { Loader2, Inbox, RefreshCw, LayoutGrid } from "lucide-react";
+import { Loader2, Inbox, RefreshCw, LayoutGrid, Hammer } from "lucide-react";
 import { toast } from "react-toastify";
 import TaskCard from "@/components/dash/mech/Task";
 import { cn } from "@/lib/utils";
@@ -10,41 +10,49 @@ import { cn } from "@/lib/utils";
 export default function MechanicActiveTasksPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [finishingTaskId, setFinishingTaskId] = useState(null);
   const [processingIds, setProcessingIds] = useState(new Set());
+  const isMounted = useRef(true);
 
+  // Sync tasks from backend [cite: 72, 323]
   const loadTasks = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
       const res = await api.get("/mechanic/tasks/active");
-      setTasks(res.data.tasks || []);
+      if (isMounted.current) setTasks(res.data.tasks || []);
     } catch (err) {
-      toast.error("Sync failed. Please pull to refresh.");
+      toast.error("Sync failed. Connection to workshop interrupted.");
     } finally {
-      setLoading(false);
-      setFinishingTaskId(null);
+      if (isMounted.current) setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
 
-  // Handle START with Optimistic UI
+  // Handle START with Optimistic UI & Locking [cite: 192, 194]
   async function handleStartTask(id) {
-    if (processingIds.has(id)) return;
+    if (processingIds.has(id)) return; // Stop double clicks
 
-    // Optimistic Update: Change status locally first
+    setProcessingIds((prev) => new Set(prev).add(id));
+
+    // Optimistic Update: Assume success for instant mechanic feedback [cite: 194]
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: "IN_PROGRESS" } : t))
     );
-    setProcessingIds((prev) => new Set(prev).add(id));
 
     try {
       await api.patch(`/mechanic/task/${id}/start`);
+      toast.info("Task synchronized: In Progress");
     } catch (err) {
-      toast.error("Could not start task");
-      loadTasks(true); // Revert on failure
+      toast.error("Handshake failed. Reverting task status.");
+      loadTasks(true); // Revert to database state [cite: 74, 107]
     } finally {
       setProcessingIds((prev) => {
         const next = new Set(prev);
@@ -54,86 +62,74 @@ export default function MechanicActiveTasksPage() {
     }
   }
 
-  // Handle COMPLETE with UI Feedback
+  // Handle COMPLETE with Inventory Check [cite: 131, 210, 215]
   async function handleCompleteTask(id) {
-    setFinishingTaskId(id);
+    if (processingIds.has(id)) return;
+
+    setProcessingIds((prev) => new Set(prev).add(id));
 
     try {
       await api.patch(`/mechanic/task/${id}/complete`);
+      toast.success("Task Logged: Awaiting Admin Audit");
 
-      // Reduce the delay: 1.5s is usually the "sweet spot" for
-      // users to register success without feeling stuck.
+      // Professional transition: Let the success message linger before removal [cite: 38, 41]
       setTimeout(() => {
-        // Filter it out locally immediately for instant feedback
         setTasks((prev) => prev.filter((t) => t.id !== id));
         loadTasks(true);
-      }, 1500);
+      }, 800);
     } catch (err) {
-      toast.error("Completion failed");
-      setFinishingTaskId(null);
+      toast.error("Completion log failed. Please check inventory logs.");
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
-  if (loading)
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] animate-pulse">
-        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-          <Loader2 className="animate-spin text-blue-600" size={24} />
-        </div>
-        <p className="text-slate-400 text-sm font-medium">
-          Loading your queue...
-        </p>
-      </div>
-    );
+  if (loading) return <WorkshopSkeleton />;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 px-4">
-      <header className="flex items-end justify-between border-b border-slate-100 pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-blue-600 mb-1">
-            <LayoutGrid size={16} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">
-              Mechanic Portal
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 px-6 animate-in fade-in duration-1000">
+      <header className="flex items-end justify-between border-b border-slate-100 pb-8">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-blue-600">
+            <Hammer size={14} className="animate-bounce" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+              Real-time Task Queue
             </span>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            Workshop Floor
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
+            Workshop <span className="text-slate-300">Floor</span>
           </h1>
         </div>
 
         <button
-          onClick={() => loadTasks(true)}
-          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-          title="Refresh List"
+          onClick={() => loadTasks()}
+          disabled={loading}
+          className="group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all active:scale-90"
         >
           <RefreshCw
-            size={20}
-            className={cn("text-slate-400", loading && "animate-spin")}
+            size={18}
+            className={cn("text-slate-900", loading && "animate-spin")}
           />
         </button>
       </header>
 
       {tasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl">
-          <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
-            <Inbox className="text-slate-300" size={32} />
-          </div>
-          <h3 className="text-slate-900 font-bold">Queue Empty</h3>
-          <p className="text-slate-500 text-sm max-w-[200px] text-center mt-1">
-            Enjoy the breather! New tickets will pop up here.
-          </p>
-        </div>
+        <EmptyQueueState />
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           {tasks.map((task, index) => (
             <div
               key={task.id}
-              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-              style={{ animationDelay: `${index * 50}ms` }}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-700"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <TaskCard
                 task={task}
-                isFinishing={finishingTaskId === task.id}
+                isProcessing={processingIds.has(task.id)}
                 onStart={() => handleStartTask(task.id)}
                 onComplete={() => handleCompleteTask(task.id)}
               />
@@ -141,6 +137,37 @@ export default function MechanicActiveTasksPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Sub-components for cleaner UX logic [cite: 145, 146]
+
+function WorkshopSkeleton() {
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 p-10 animate-pulse">
+      <div className="h-20 w-full bg-slate-50 rounded-[2rem]" />
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-48 bg-slate-50 rounded-[2rem]" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyQueueState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-100">
+      <div className="p-6 bg-slate-50 rounded-full mb-6">
+        <Inbox className="text-slate-200" size={48} />
+      </div>
+      <h3 className="text-xl font-black text-slate-900 italic tracking-tight">
+        STATION CLEAR
+      </h3>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">
+        Monitoring for new service requests...
+      </p>
     </div>
   );
 }
