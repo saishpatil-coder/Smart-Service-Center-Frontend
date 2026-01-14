@@ -146,10 +146,10 @@ export default function MechanicActiveTasksPage() {
 function WorkshopSkeleton() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 p-10 animate-pulse">
-      <div className="h-20 w-full bg-slate-50 rounded-[2rem]" />
+      <div className="h-20 w-full bg-slate-100 rounded-[2rem]" />
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 bg-slate-50 rounded-[2rem]" />
+          <div key={i} className="h-48 bg-slate-100 rounded-[2rem]" />
         ))}
       </div>
     </div>
@@ -159,8 +159,8 @@ function WorkshopSkeleton() {
 function EmptyQueueState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-100">
-      <div className="p-6 bg-slate-50 rounded-full mb-6">
-        <Inbox className="text-slate-200" size={48} />
+      <div className="p-6 bg-slate-200 rounded-full mb-6">
+        <Inbox className="text-slate-400" size={48} />
       </div>
       <h3 className="text-xl font-black text-slate-900 italic tracking-tight">
         STATION CLEAR

@@ -33,7 +33,13 @@ export default function PendingTicketsPage() {
     loadTickets();
   }, []);
 
-  if (loading) return <PendingTicketsSkeleton />;
+  if (loading) return 
+  (
+    <div className="flex justify-center items-center h-64">
+      <Loader2 className="animate-spin text-gray-500" size={32} />
+    </div>
+  )
+  ;
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-8 pb-20 px-4 animate-in fade-in duration-700">

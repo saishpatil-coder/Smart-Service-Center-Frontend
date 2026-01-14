@@ -21,6 +21,8 @@ import Image from "next/image";
 import TicketTimeline from "@/components/TicketTimeline";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import TicketMessaging from "@/components/dash/TicketMessaging";
+import TicketFeedback from "@/components/dash/TicketFeedback";
 
 export default function TicketDetailsPage(props) {
   const router = useRouter();
@@ -193,6 +195,9 @@ export default function TicketDetailsPage(props) {
           </section>
 
           <TicketTimeline ticket={ticket} />
+          <TicketFeedback ticketId={ticket.id} />
+
+          <TicketMessaging ticketId={ticket.id} status={ticket.status} />
         </div>
 
         {/* Sidebar */}

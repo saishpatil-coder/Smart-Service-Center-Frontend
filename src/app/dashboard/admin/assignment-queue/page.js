@@ -28,7 +28,9 @@ export default function AssignmentQueuePage() {
 
   if (loading)
     return (
-      <FullPageSkeleton/>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="animate-spin text-gray-500" size={32} />
+      </div>
     );
 
   return (
@@ -70,53 +72,3 @@ function formatTimeLeft(deadline) {
 }
 
 
-
-const TicketSkeleton = () => (
-  <div className="w-full bg-white border border-slate-100 rounded-2xl p-6 flex flex-col md:flex-row gap-6 animate-pulse">
-    <div className="flex-1 space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-6 bg-slate-100 rounded-lg" />
-        <div className="w-32 h-6 bg-slate-100 rounded-lg" />
-      </div>
-      <div className="w-full h-8 bg-slate-50 rounded-xl" />
-      <div className="flex gap-4">
-        <div className="w-24 h-4 bg-slate-50 rounded" />
-        <div className="w-24 h-4 bg-slate-50 rounded" />
-      </div>
-    </div>
-    <div className="w-full md:w-32 h-12 bg-slate-900/5 rounded-xl" />
-  </div>
-);
-
-const FullPageSkeleton = () => (
-  <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4">
-    {/* Header Skeleton */}
-    <div className="flex justify-between items-end">
-      <div className="space-y-3">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
-            <ListOrdered /> 
-          </div>
-          Assignment Queue
-        </h1>
-      </div>
-    </div>
-
-    {/* Filter Bar Skeleton */}
-    <div className="flex gap-2 p-1 bg-white border border-slate-100 rounded-2xl w-fit">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="px-8 py-4 bg-slate-50 rounded-xl" />
-      ))}
-    </div>
-
-    {/* Results Count Skeleton */}
-    <div className="h-4 w-32 bg-slate-50 rounded" />
-
-    {/* List Skeleton */}
-    <div className="grid gap-4">
-      {[1, 2, 3, 4].map((i) => (
-        <TicketSkeleton key={i} />
-      ))}
-    </div>
-  </div>
-);

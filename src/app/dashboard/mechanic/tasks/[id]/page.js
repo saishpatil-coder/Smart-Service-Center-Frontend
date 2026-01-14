@@ -18,6 +18,8 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
+import TicketMessaging from "@/components/dash/TicketMessaging";
+import TicketFeedback from "@/components/dash/TicketFeedback";
 
 export default function MechanicTaskDetailsPage(props) {
   const router = useRouter();
@@ -358,6 +360,8 @@ const addPartsUsed = async () => {
               </div>
             </div>
           )}
+          <TicketFeedback ticketId={ticket.id} />
+          <TicketMessaging ticketId={ticket.id} status={ticket.status} />
         </div>
       </div>
     </div>
