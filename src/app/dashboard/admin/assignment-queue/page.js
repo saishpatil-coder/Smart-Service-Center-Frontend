@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/lib/axios";
 import { Loader2, ListOrdered, Wrench, Clock } from "lucide-react";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 import QueueCard from "@/components/QueueCard";
+import { getAssignementQueue } from "@/services/admin.service";
 
 export default function AssignmentQueuePage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   async function loadQueue() {
+    setLoading(true);
     try {
-      const res = await api.get("/admin/assignment-queue");
+      const res = await getAssignementQueue();
       setTickets(res.data.tickets || []);
     } catch (error) {
       console.error("Error loading queue:", error);
@@ -25,6 +24,7 @@ export default function AssignmentQueuePage() {
   useEffect(() => {
     loadQueue();
   }, []);
+  
 
   if (loading)
     return (
@@ -51,24 +51,11 @@ export default function AssignmentQueuePage() {
 
       <div className="space-y-4">
         {tickets.map((t) => (
-          <QueueCard key={t.id} ticket={t} />
+          <QueueCard key={t.id} ticket={t} onRefresh={loadQueue} />
         ))}
       </div>
     </div>
   );
-}
-function formatTimeLeft(deadline) {
-  const now = new Date();
-  const end = new Date(deadline);
-  const diff = end - now;
-
-  if (diff <= 0) return "Expired";
-
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins} min left`;
-
-  const hrs = Math.floor(mins / 60);
-  return `${hrs} hrs left`;
 }
 
 

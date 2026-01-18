@@ -12,11 +12,13 @@ import {
   Edit,
   Edit3,
   Check,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { escalateTicket, savePriorityOfTicket } from "@/services/admin.service";
 
 export default function QueueCard({ ticket, onRefresh }) {
   const {
@@ -24,7 +26,7 @@ export default function QueueCard({ ticket, onRefresh }) {
     title,
     description,
     severityName,
-    severityColor, // Use the color from DB
+    severityColor,
     imageUrl,
     slaAssignDeadline,
     createdAt,
@@ -37,29 +39,35 @@ export default function QueueCard({ ticket, onRefresh }) {
 
   const [isEditingPriority, setIsEditingPriority] = useState(false);
   const [newPriority, setNewPriority] = useState(priority || 0);
-
+  const [submitting, setSubmitting] = useState(false);
   // QueueCard.js
   const handleEscalate = async () => {
+    setSubmitting(true);
     try {
-      await api.post(`/admin/ticket/${ticket.id}/escalate`);
+await escalateTicket(ticket.id)
       toast.success("Ticket Escalated");
+      onRefresh && onRefresh();
       router.refresh();
     } catch (err) {
       console.error(err);
       toast.error("Escalation failed");
+    }finally{
+      setSubmitting(false);
     }
   };
 
   const handleSavePriority = async () => {
+    setSubmitting(true);
     try {
-      await api.post(`/admin/ticket/${id}/priority`, {
-        customPriority: newPriority,
-      });
+      await savePriorityOfTicket(id, newPriority);
       toast.success("Priority Rank Updated");
       setIsEditingPriority(false);
+      onRefresh && onRefresh();
       router.refresh()
     } catch (error) {
       toast.error("Failed to update priority");
+    } finally{
+      setSubmitting(false);
     }
   };
 
@@ -154,10 +162,15 @@ export default function QueueCard({ ticket, onRefresh }) {
                   autoFocus
                 />
                 <button
+                disabled={submitting}
                   onClick={handleSavePriority}
                   className="bg-blue-600 text-white p-1 rounded-md hover:bg-blue-700 transition-colors shadow-sm"
                 >
-                  <Check size={12} strokeWidth={4} />
+                  {submitting ? (
+                    <Loader2 className="animate-spin" size={14} />
+                  ) : (
+                    <Check size={14} />
+                  )}
                 </button>
               </div>
             ) : (
@@ -182,11 +195,18 @@ export default function QueueCard({ ticket, onRefresh }) {
         <div className="flex items-center gap-2 mt-4">
           {!isEscalated && (
             <button
+            disabled={submitting}
               onClick={handleEscalate}
               className="flex items-center gap-1.5 px-3 py-2 bg-white border border-red-200 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white hover:border-red-600 transition-all active:scale-95 shadow-sm"
             >
-              <ChevronUp size={14} strokeWidth={3} />
-              Escalate
+              {submitting ? (
+                <Loader2 className="animate-spin" size={14} />
+              ) : (
+                <>
+                  <ChevronUp size={14} strokeWidth={3} />
+                  Escalate
+                </>
+              )}
             </button>
           )}
 

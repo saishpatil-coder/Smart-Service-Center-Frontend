@@ -10,6 +10,7 @@ import {
   History,
   Info,
   Home,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -65,12 +66,15 @@ export default function Navbar() {
 
         {/* USER PROFILE / AUTH */}
         <div className="hidden md:flex items-center">
-          {!user ? (
+          {
+            loading?<Loader2/>:
+          
+          !user ? (
             <Link
               href="/login"
               className="bg-white text-[#6CA8F7] px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-50 transition-all active:scale-95"
             >
-              Access Portal
+              Login
             </Link>
           ) : (
             <div className="relative">
@@ -123,6 +127,7 @@ export default function Navbar() {
               )}
             </div>
           )}
+          
         </div>
 
         {/* MOBILE TRIGGER */}

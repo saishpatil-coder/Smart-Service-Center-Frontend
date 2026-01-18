@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
 import {
-  Loader2,
   Ticket,
-  Search,
   FilterX,
   LayoutGrid,
   List,
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
 } from "lucide-react";
 import TicketCard from "@/components/TickerCard";
 import { useDashboard } from "@/context/DashBoardContext";
@@ -25,47 +26,58 @@ const STATUS_FILTERS = [
 ];
 
 export default function AllTicketsPage() {
-  const { search } = useDashboard(); // Using global search from Topbar
+  const { search } = useDashboard();
   const [tickets, setTickets] = useState([]);
   const [status, setStatus] = useState("ALL");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Subtle loading for page changes
 
-  async function loadTickets() {
-    try {
-      setLoading(true);
-      const res = await api.get("/admin/tickets");
-      setTickets(res.data.tickets || []);
-    } catch (err) {
-      console.error("Failed to load tickets:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const loadTickets = useCallback(
+    async (isInitial = false) => {
+      try {
+        isInitial ? setLoading(true) : setRefreshing(true);
+
+        const res = await api.get("/admin/tickets", {
+          params: {
+            page: currentPage,
+            limit: 10,
+            status: status,
+            search: search, // If your backend handles search, pass it here
+          },
+        });
+
+        setTickets(res.data.tickets || []);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalItems(res.data.totalItems || 0);
+      } catch (err) {
+        console.error("Failed to load tickets:", err);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [currentPage, status, search]
+  );
 
   useEffect(() => {
-    loadTickets();
-  }, []);
+    loadTickets(true);
+  }, [currentPage, status]); // Re-fetch when page or status changes
 
-  // Professional Filter Logic: Combines Status + Global Search
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((t) => {
-      const matchesStatus = status === "ALL" || t.status === status;
-      const matchesSearch =
-        t.title.toLowerCase().includes(search.toLowerCase()) ||
-        t.id.toLowerCase().includes(search.toLowerCase()) ||
-        t.clientName?.toLowerCase().includes(search.toLowerCase());
+  // Reset to page 1 when status changes
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    setCurrentPage(1);
+  };
 
-      return matchesStatus && matchesSearch;
-    });
-  }, [status, tickets, search]);
-
-  if (loading)
-    return (
-<FullPageSkeleton/>
-    );
+  if (loading) return <FullPageSkeleton />;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -75,91 +87,61 @@ export default function AllTicketsPage() {
             </div>
             Ticket Master List
           </h1>
-          <p className="text-slate-500 mt-1 font-medium ml-14 md:ml-14">
+          <p className="text-slate-500 mt-1 font-medium ml-14">
             Monitoring{" "}
-            <span className="text-blue-600 font-bold">{tickets.length}</span>{" "}
-            total service requests
+            <span className="text-blue-600 font-bold">{totalItems}</span> total
+            service requests
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-sm">
-          {/* View Toggle Placeholder */}
-          <button className="p-2 bg-white rounded-lg shadow-sm text-blue-600">
-            <List size={18} />
-          </button>
-          <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
-            <LayoutGrid size={18} />
-          </button>
+        <div className="flex items-center gap-4">
+          {refreshing && (
+            <RotateCw size={18} className="animate-spin text-blue-600" />
+          )}
+          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button className="p-2 bg-white rounded-lg shadow-sm text-blue-600">
+              <List size={18} />
+            </button>
+            <button className="p-2 text-slate-400 hover:text-slate-600">
+              <LayoutGrid size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Segmented Filter Control */}
-
       <div className="flex flex-col gap-6">
         <div className="overflow-x-auto pb-2 no-scrollbar">
           <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-2xl w-fit shadow-sm">
-            {STATUS_FILTERS.map((s) => {
-              const isActive = status === s;
-              return (
-                <button
-                  key={s}
-                  onClick={() => setStatus(s)}
-                  className={cn(
-                    "px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap",
-                    isActive
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  )}
-                >
-                  {s.replace("_", " ")}
-                </button>
-              );
-            })}
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s}
+                disabled={refreshing}
+                onClick={() => handleStatusChange(s)}
+                className={cn(
+                  "px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap disabled:opacity-50",
+                  status === s
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                    : "text-slate-500 hover:bg-slate-50"
+                )}
+              >
+                {s.replace("_", " ")}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Results Info */}
-        <div className="flex items-center justify-between text-sm">
-          <p className="text-slate-500 font-medium">
-            Showing{" "}
-            <span className="text-slate-900 font-bold">
-              {filteredTickets.length}
-            </span>{" "}
-            results
-            {status !== "ALL" && (
-              <span>
-                {" "}
-                for status <b className="text-blue-600">{status}</b>
-              </span>
-            )}
-          </p>
-          {search && (
-            <button
-              onClick={() => setStatus("ALL")}
-              className="text-blue-600 font-bold hover:underline"
-            >
-              Clear all filters
-            </button>
+        {/* Tickets Grid */}
+        <div
+          className={cn(
+            "grid gap-4 transition-opacity",
+            refreshing ? "opacity-50" : "opacity-100"
           )}
-        </div>
-
-        {/* Tickets Grid/List */}
-        <div className="grid gap-4">
-          {filteredTickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-              <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                <FilterX size={40} className="text-slate-300" />
-              </div>
-              <h3 className="text-slate-900 font-bold text-lg">
-                No tickets match your criteria
-              </h3>
-              <p className="text-slate-500 text-sm max-w-xs mx-auto mt-1">
-                Try adjusting your filters or search query to find the ticket
-                you're looking for.
-              </p>
-            </div>
+        >
+          {tickets.length === 0 ? (
+            <NoResults status={status} />
           ) : (
-            filteredTickets.map((t) => (
+            tickets.map((t) => (
               <div
                 key={t.id}
                 className="animate-in fade-in slide-in-from-bottom-3 duration-500"
@@ -169,10 +151,93 @@ export default function AllTicketsPage() {
             ))
           )}
         </div>
+
+        {/* Industry Standard Pagination Footer */}
+        {totalItems > 0 && (
+          <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-slate-200 gap-4">
+            <p className="text-sm text-slate-500">
+              Showing{" "}
+              <span className="font-bold text-slate-900">
+                {(currentPage - 1) * 10 + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-bold text-slate-900">
+                {Math.min(currentPage * 10, totalItems)}
+              </span>{" "}
+              of <span className="font-bold text-slate-900">{totalItems}</span>{" "}
+              tickets
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || refreshing}
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  // Logic to show only a few page numbers if totalPages is huge
+                  if (
+                    totalPages > 5 &&
+                    Math.abs(pageNum - currentPage) > 1 &&
+                    pageNum !== 1 &&
+                    pageNum !== totalPages
+                  ) {
+                    if (pageNum === 2 || pageNum === totalPages - 1)
+                      return <span key={pageNum}>...</span>;
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      disabled={refreshing}
+                      className={cn(
+                        "w-10 h-10 rounded-lg text-sm font-bold transition-all",
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages || refreshing}
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+// Sub-component for Empty State
+const NoResults = ({ status }) => (
+  <div className="flex flex-col items-center justify-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
+    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+      <FilterX size={40} className="text-slate-300" />
+    </div>
+    <h3 className="text-slate-900 font-bold text-lg">No tickets found</h3>
+    <p className="text-slate-500 text-sm max-w-xs mx-auto mt-1">
+      No tickets match the {status !== "ALL" ? `"${status}"` : ""} criteria.
+    </p>
+  </div>
+);
 
 
 const TicketSkeleton = () => (

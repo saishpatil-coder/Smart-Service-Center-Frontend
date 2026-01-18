@@ -51,14 +51,8 @@ const [cancelReason, setCancelReason] = useState("");
   async function handleAccept() {
     setAccepting(true);
     try {
-      await toast.promise(
-        api.patch(`/admin/ticket/${id}/accept`),
-        {
-          loading: "Processing acceptance...",
-          success: "Ticket moved to assignment queue",
-          error: "Action failed. Check permissions.",
-        }
-      );
+      await
+        api.patch(`/admin/ticket/${id}/accept`)
       router.push("/dashboard/admin/pending-tickets");
     } catch (err) {
       console.error(err);
@@ -98,6 +92,46 @@ const [cancelReason, setCancelReason] = useState("");
       <Loader2 className="animate-spin text-blue-600" size={40} />
       <p className="text-slate-500 font-medium">Fetching secure record...</p>
     </div>
+  );
+  if(!ticket) return (
+    <>
+      {/* Navigation */}
+      <button
+        onClick={() => router.back()}
+        className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-medium"
+      >
+        <ArrowLeft
+          size={18}
+          className="group-hover:-translate-x-1 transition-transform"
+        />
+        Back to Pending Queue
+      </button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <XCircle className="text-red-600" size={40} />
+        <p className="text-slate-500 font-medium">
+          Ticket not found or inaccessible.
+        </p>
+      </div>
+    </>
+  );
+  if(ticket.status !== "PENDING") return (
+    <>
+          {/* Navigation */}
+      <button
+        onClick={() => router.back()}
+        className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-medium"
+      >
+        <ArrowLeft
+          size={18}
+          className="group-hover:-translate-x-1 transition-transform"
+        />
+        Back to Pending Queue
+      </button>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <AlertCircle className="text-yellow-600" size={40} />
+      <p className="text-slate-500 font-medium">This ticket is no longer pending review.</p>
+    </div>
+    </>
   );
 
   return (

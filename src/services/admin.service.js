@@ -92,3 +92,20 @@ export async function getAllServices(){
   }
 }
 
+export async function getPendingTickets(page=1){
+  return await api.get(`/admin/pending-tickets?page=${page}`);
+}
+
+export async function getAssignementQueue(){
+  return await api.get("/admin/assignment-queue");
+}
+
+export async function savePriorityOfTicket(ticketId, newPriority){
+  await api.post(`/admin/ticket/${ticketId}/priority`, {
+        customPriority: newPriority,
+      });
+}
+
+export async function escalateTicket(id) {
+          await api.post(`/admin/ticket/${id}/escalate`);
+}

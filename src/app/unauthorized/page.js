@@ -9,39 +9,36 @@ export default function UnauthorizedPage() {
   const { user } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if(!user){
-        router.replace("/login");
-      }
-    }, 1);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     if (!user) {
+  //       router.replace("/login");
+  //     }
+  //   }, 1);
 
-    return () => clearTimeout(timer);
-  }, []);
-
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   const role = user?.role || "CLIENT";
 
-  const redirectPath =
-  !role ?
-  "/":
-    role === "ADMIN"
-      ? "/dashboard/admin"
-      : role === "MECHANIC"
-      ? "/dashboard/mechanic"
-      : "/dashboard/client";
+  const redirectPath = !role
+    ? "/"
+    : role === "ADMIN"
+    ? "/dashboard/admin"
+    : role === "MECHANIC"
+    ? "/dashboard/mechanic"
+    : "/dashboard/client";
 
-  const buttonLabel =
-  !role ?
-  "Go Back to Home" :
-    role === "ADMIN"
-      ? "Go to Admin Dashboard"
-      : role === "MECHANIC"
-      ? "Go to Mechanic Dashboard"
-      : "Go to Client Dashboard";
+  const buttonLabel = !role
+    ? "Go Back to Home"
+    : role === "ADMIN"
+    ? "Go to Admin Dashboard"
+    : role === "MECHANIC"
+    ? "Go to Mechanic Dashboard"
+    : "Go to Client Dashboard";
 
   return (
-    <div className="min-h-[calc(100vh-164px)] flex items-center justify-center bg-gradient-to-br from-red-50 to-red-200 px-4">
+    <div className="mt-15 min-h-[calc(100vh-164px)] flex items-center justify-center bg-gradient-to-br from-red-50 to-red-200 px-4">
       <div className="relative p-[2px] rounded-2xl bg-gradient-to-br from-red-400/60 via-pink-400/60 to-red-600/60 shadow-2xl animate-borderGlow">
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-10 max-w-md text-center shadow-xl">
           {/* Animated Icon Ring */}

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function MechanicDetailsPage(props) {
   const router = useRouter();
@@ -289,9 +290,11 @@ function TaskCard({ task }) {
             <p className="text-lg font-black text-slate-900 flex items-center gap-1">
               <IndianRupee size={14} className="text-slate-400" /> {ticket.cost}
             </p>
-            <button className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 hover:underline">
-              View Ticket <ExternalLink size={12} />
-            </button>
+            <Link href={`/dashboard/admin/tickets/${ticket.id}`}>
+              <button className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 hover:underline">
+                View Ticket <ExternalLink size={12} />
+              </button>
+            </Link>
           </div>
         </div>
       </div>

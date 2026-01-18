@@ -65,7 +65,6 @@ const SideBar = () => {
   const menuConfig = {
     ADMIN: [
       { label: "Overview", icon: LayoutDashboard, href: "/dashboard/admin" },
-      { label: "Inventory", icon: History, href: "/dashboard/admin/inventory" },
       {
         label: "Pending",
         icon: Clock,
@@ -78,6 +77,8 @@ const SideBar = () => {
       },
       { label: "All Tickets", icon: Tickets, href: "/dashboard/admin/tickets" },
       { label: "Mechanics", icon: Users, href: "/dashboard/admin/mechanics" },
+      { label: "Inventory", icon: History, href: "/dashboard/admin/inventory" },
+
       {
         label: "Severities",
         icon: ShieldAlert,

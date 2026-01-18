@@ -11,8 +11,6 @@ import {
   Mail,
   ShieldCheck,
   Search,
-  MoreVertical,
-  Calendar,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -44,26 +42,6 @@ export default function MechanicsPage() {
     );
   }, [mechanics, searchQuery]);
 
-  async function handleDelete(id, name) {
-    toast.warning(`Remove ${name}?`, {
-      description: "This mechanic will no longer be able to access the portal.",
-      action: {
-        label: "Remove",
-        onClick: async () => {
-          try {
-            setDeletingId(id);
-            await deleteMechanic(id);
-            setMechanics((prev) => prev.filter((m) => m.id !== id));
-            toast.success(`${name} has been removed.`);
-          } catch (err) {
-            toast.error("Failed to remove mechanic. Access denied.");
-          } finally {
-            setDeletingId("");
-          }
-        },
-      },
-    });
-  }
 
   useEffect(() => {
     loadMechanics();
@@ -164,7 +142,7 @@ export default function MechanicsPage() {
                     </div>
                   </div>
 
-                  <button
+                  {/* <button
                     disabled={deletingId === m.id}
                     onClick={() => handleDelete(m.id, m.name)}
                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all active:scale-90"
@@ -174,7 +152,7 @@ export default function MechanicsPage() {
                     ) : (
                       <Trash2 size={20} />
                     )}
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">

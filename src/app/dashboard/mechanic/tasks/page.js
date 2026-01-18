@@ -15,14 +15,14 @@ export default function MechanicActiveTasksPage() {
 
   // Sync tasks from backend [cite: 72, 323]
   const loadTasks = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
+    setLoading(true);
     try {
       const res = await api.get("/mechanic/tasks/active");
-      if (isMounted.current) setTasks(res.data.tasks || []);
+      setTasks(res.data.tasks || []);
     } catch (err) {
       toast.error("Sync failed. Connection to workshop interrupted.");
     } finally {
-      if (isMounted.current) setLoading(false);
+      setLoading(false);
     }
   }, []);
 
@@ -148,9 +148,7 @@ function WorkshopSkeleton() {
     <div className="max-w-4xl mx-auto space-y-8 p-10 animate-pulse">
       <div className="h-20 w-full bg-slate-100 rounded-[2rem]" />
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 bg-slate-100 rounded-[2rem]" />
-        ))}
+        <Loader2/>
       </div>
     </div>
   );
