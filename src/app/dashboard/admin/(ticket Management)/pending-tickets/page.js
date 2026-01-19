@@ -181,7 +181,7 @@ function PendingTicketCard({ ticket }) {
         </div>
 
         {/* ACTION */}
-        <Link href={`/dashboard/admin/ticket/${id}`}>
+        <Link href={`/dashboard/admin/pending-tickets/${id}`}>
           <button
             onClick={() => {
               setView(true);

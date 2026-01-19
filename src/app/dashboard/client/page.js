@@ -28,6 +28,9 @@ export default function ClientDashboardPage() {
     if (!authLoading && user && user.role !== "CLIENT") {
       router.replace("/unauthorized");
     }
+    if(!authLoading && !user){
+      router.replace("/");
+    }
   }, [authLoading, user, router]);
 
   /* ------------------ FETCH TICKETS ------------------ */

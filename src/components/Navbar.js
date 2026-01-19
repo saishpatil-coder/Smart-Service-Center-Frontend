@@ -166,7 +166,9 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="pt-6 border-t border-white/10">
-            {!user ? (
+            {
+            loading ? <Loader2/>:
+            !user ? (
               <Link
                 href="/login"
                 className="block w-full text-center bg-white text-[#6CA8F7] py-4 rounded-xl font-black uppercase tracking-widest text-xs"

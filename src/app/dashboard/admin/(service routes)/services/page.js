@@ -16,7 +16,6 @@ import {
   SearchX,
 } from "lucide-react";
 import { useDashboard } from "@/context/DashBoardContext";
-import { cn } from "@/lib/utils";
 
 export default function ServicesPage() {
   const { search } = useDashboard();

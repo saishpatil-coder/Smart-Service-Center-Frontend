@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, History, LayoutDashboard, Info } from "lucide-react";
+import { ArrowRight, History, LayoutDashboard, Info, Loader2 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 export default function Hero() {
-  let {user} = useUser();
+  let {user , loading} = useUser();
   return (
     <section className="relative bg-[#6CA8F7] text-white pt-22 pb-10 md:pt-38 md:pb-32 overflow-hidden">
       {/* Background Decorative Element */}
@@ -31,17 +31,23 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <Link
-              href={`${!user ? "/login" : `/dashboard/${user.role.toLowerCase()}`} `}
-              className="group flex items-center gap-3 bg-white text-[#6CA8F7] px-8 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:bg-blue-50 active:scale-95 shadow-2xl shadow-blue-900/20"
-            >
-              <LayoutDashboard size={16} />
-              Open Console
-              <ArrowRight
-                size={14}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </Link>
+            {loading ? (
+              <Loader2 />
+            ) : (
+              <Link
+                href={`${
+                  !user ? "/login" : `/dashboard/${user.role.toLowerCase()}`
+                } `}
+                className="group flex items-center gap-3 bg-white text-[#6CA8F7] px-8 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:bg-blue-50 active:scale-95 shadow-2xl shadow-blue-900/20"
+              >
+                <LayoutDashboard size={16} />
+                Open Console
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </Link>
+            )}
 
             <Link
               href="/timeline"

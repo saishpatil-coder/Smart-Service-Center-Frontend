@@ -1,6 +1,5 @@
 import {
   CheckCircle2,
-  Circle,
   Clock,
   Wrench,
   UserCheck,
