@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@/services/auth.service";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
-import { Loader2, KeyRound, Mail } from "lucide-react";
+import { Loader2, KeyRound, Mail, Beaker } from "lucide-react";
 import { APP_NAME } from "@/constants/app";
 
 export function LoginForm({ className, ...props }) {
@@ -27,18 +27,19 @@ export function LoginForm({ className, ...props }) {
   const [success , setSuccess] = useState("")
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e,manualData) => {
     e.preventDefault();
     setError("");
+    const formData = manualData || data;
 
-    if (!data.email || !data.password) {
+    if (!formData.email || !formData.password) {
       return setError("Credentials required.");
     }
 
     setSubmitting(true);
 
     try {
-      let response = await login(data.email, data.password);
+      let response = await login(formData.email, formData.password);
       toast.success(response.message || "Access Granted");
       setUser(response.user);
       setSuccess("Syncing your dashboard...");
@@ -56,7 +57,7 @@ export function LoginForm({ className, ...props }) {
       onSubmit={handleSubmit}
       className={cn(
         "flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700",
-        className
+        className,
       )}
       {...props}
     >
@@ -130,13 +131,47 @@ export function LoginForm({ className, ...props }) {
             "Authenticate"
           )}
         </Button>
+        {/* --- EVALUATION / TESTING SECTION --- */}
+        <div className="mt-4 pt-4 border-t border-dashed border-slate-200">
+          <div className="flex items-center gap-2 mb-3 justify-center">
+            <Beaker size={14} className="text-blue-500" />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Dev Evaluation Mode
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Admin", email: "admin@gmail.com" },
+              { label: "Client", email: "client@gmail.com" },
+              { label: "Mechanic", email: "mech@gmail.com" },
+            ].map((role) => (
+              <Button
+                key={role.label}
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  const credentials = {
+                    email: role.email,
+                    password: "Sai1234",
+                  };
+                  setData(credentials); // Updates UI for feedback
+                  handleSubmit(e, credentials); // Pass data directly to bypass async state delay
+                }}
+                className="h-10 text-[9px] font-bold uppercase border-slate-200 hover:bg-slate-50 rounded-xl cursor-pointer"
+              >
+                {role.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        {/* --- END EVALUATION SECTION --- */}
 
         <FieldSeparator className="opacity-50" />
 
         {/* Bottom Text */}
         <div className="text-center">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            New to {APP_NAME}?{" "} <br />
+            New to {APP_NAME}? <br />
             <Link
               href="/register"
               className="text-slate-900 underline underline-offset-4 hover:text-blue-600 transition-colors"

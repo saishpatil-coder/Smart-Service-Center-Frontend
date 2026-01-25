@@ -76,10 +76,10 @@ export default function DashboardTopbar() {
     try {
       setLoggingOut(true);
       await deleteFCMToken();
-      sessionStorage.removeItem("fcm_sent");
+      localStorage.removeItem("fcm_sent");
       await logout();
-      setUser(null);
       toast.success("Logged out successfully");
+      setUser(null);
       router.push("/login");
 
     } catch (error) {

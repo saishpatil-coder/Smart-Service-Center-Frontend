@@ -13,11 +13,13 @@ import {
   Image as ImageIcon,
   X,
   ChevronRight,
+  Loader,
 } from "lucide-react";
 import { getAllServices } from "@/services/admin.service";
 import { addTicket } from "@/services/client.service";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
+import CloudinaryUpload from "@/components/dash/client/ImageUpload";
 
 export default function CreateTicketPage() {
   const [services, setServices] = useState([]);
@@ -47,6 +49,28 @@ export default function CreateTicketPage() {
     }
     fetchServices();
   }, []);
+const uploadToCloudinary = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "ccscms");
+  formData.append("cloud_name", "daoz0nloc");
+
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/daoz0nloc/image/upload",
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  const result = await res.json();
+
+  if (!result.secure_url) {
+    throw new Error("Cloudinary upload failed");
+  }
+
+  return result.secure_url;
+};
 
   /* ------------------ Derived SLA Preview ------------------ */
   const slaPreview = useMemo(() => {
@@ -62,25 +86,14 @@ export default function CreateTicketPage() {
       slaAcceptDeadline: new Date(now.getTime() + acceptMs),
       slaAssignDeadline: new Date(now.getTime() + assignMs),
       expectedCompletionAt: new Date(
-        now.getTime() + acceptMs + assignMs + hoursMs
+        now.getTime() + acceptMs + assignMs + hoursMs,
       ),
       expectedHours: selectedService.defaultExpectedHours,
       expectedCost: selectedService.defaultCost,
     };
   }, [selectedService]);
 
-  /* ------------------ Handlers ------------------ */
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        e.target.value = null;
-        return toast.error("Image size should be less than 5MB");
-      }
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
-  };
+
 
   const clearImage = () => {
     setImage(null);
@@ -92,30 +105,41 @@ export default function CreateTicketPage() {
     const service = services.find((s) => s.id === id);
     setSelectedService(service || null);
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoadingSubmit(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingSubmit(true);
+  try {
+    let imageUrl = null;
 
-    try {
-      const formData = new FormData();
-      formData.append("serviceId", data.serviceId);
-      formData.append("description", data.description);
-      if (image) formData.append("image", image);
-
-      const res = await addTicket(formData);
-      toast.success(res.message || "Ticket created successfully!");
-
-      // Reset Form
-      setData({ serviceId: "", description: "" });
-      setSelectedService(null);
-      clearImage();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create ticket.");
-    } finally {
-      setLoadingSubmit(false);
+    // 1. Upload image ONLY NOW (on submit)
+    if (image) {
+      imageUrl = await uploadToCloudinary(image);
+      console.log("URL : ",imageUrl)
     }
-  };
+
+    // 2. Call backend with Cloudinary URL
+    const payload = {
+      serviceId: data.serviceId,
+      description: data.description,
+      image: imageUrl, // send URL, not file
+    };
+
+    const res = await addTicket(payload);
+
+    toast.success(res.message || "Ticket created successfully!");
+
+    // Reset
+    setData({ serviceId: "", description: "" });
+    setSelectedService(null);
+    setImage(null);
+    setPreview(null);
+  } catch (err) {
+    toast.error("Failed to create ticket.");
+  } finally {
+    setLoadingSubmit(false);
+  }
+};
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -142,7 +166,10 @@ export default function CreateTicketPage() {
                 1. Select Service Type
               </label>
               {loadingServices ? (
-                <div className="animate-pulse h-12 bg-slate-100 rounded-xl" />
+                <div className="animate-pulse justify-center align-center h-12 bg-slate-100 flex rounded-xl">
+                  <Loader2 />
+                  Loading Services
+                </div>
               ) : (
                 <select
                   className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-slate-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none appearance-none cursor-pointer font-medium"
@@ -177,49 +204,12 @@ export default function CreateTicketPage() {
             </div>
 
             {/* IMAGE UPLOAD */}
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-                3. Attachment (Optional)
-              </label>
-
-              {!preview ? (
-                <label className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload
-                      className="text-slate-400 group-hover:text-blue-500 transition-colors mb-2"
-                      size={24}
-                    />
-                    <p className="text-sm text-slate-500 group-hover:text-blue-600 font-medium">
-                      Click to upload photo
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">
-                      JPG, PNG up to 5MB
-                    </p>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImage}
-                  />
-                </label>
-              ) : (
-                <div className="relative w-40 aspect-square rounded-2xl overflow-hidden border-4 border-white shadow-lg group">
-                  <img
-                    src={preview}
-                    alt="preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={clearImage}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
+            <CloudinaryUpload
+              file={image}
+              setFile={setImage}
+              preview={preview}
+              setPreview={setPreview}
+            />
           </div>
 
           <button
@@ -244,7 +234,7 @@ export default function CreateTicketPage() {
               "bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-500",
               !selectedService
                 ? "opacity-50 grayscale pointer-events-none"
-                : "opacity-100"
+                : "opacity-100",
             )}
           >
             <div className="bg-slate-900 p-6 text-white">
@@ -329,7 +319,7 @@ function TimelineItem({ icon, label, time, isHighlight }) {
         "flex items-center justify-between p-3 rounded-xl border transition-colors",
         isHighlight
           ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100"
-          : "bg-white border-slate-100 text-slate-600"
+          : "bg-white border-slate-100 text-slate-600",
       )}
     >
       <div className="flex items-center gap-3">
@@ -341,7 +331,7 @@ function TimelineItem({ icon, label, time, isHighlight }) {
       <span
         className={cn(
           "text-[11px] font-bold",
-          isHighlight ? "text-blue-100" : "text-slate-400"
+          isHighlight ? "text-blue-100" : "text-slate-400",
         )}
       >
         {time

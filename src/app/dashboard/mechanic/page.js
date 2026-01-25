@@ -1,54 +1,58 @@
 "use client";
-import { useEffect, useState } from "react";
-import api from "@/lib/axios";
-import { useUser } from "@/context/UserContext";
-import { useRouter } from "next/navigation";
-import LoadingDashboard from "@/components/Loading";
-import {
-  Wrench,
-  CheckCircle2,
-  Clock,
-  ChevronRight,
-  AlertCircle,
-  Radio,
-  ShieldCheck,
-  Zap,
-  PlayCircle,
-  Check,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import DutyStatusToggle from "@/components/DutyStatusToggle";
+import LoadingDashboard from "@/components/Loading";
+import { useUser } from "@/context/UserContext";
+import api from "@/lib/axios";
+import { cn } from "@/lib/utils";
+import
+  {
+    Check,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    PlayCircle,
+    Radio,
+    ShieldCheck,
+    Wrench,
+    Zap
+  } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function MechanicDashboardPage() {
   const [summary, setSummary] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const { user, loading } = useUser();
+  const { user, loading} = useUser();
   const router = useRouter();
-  console.log(user)
-
+  /* ------------------ ROLE PROTECTION ------------------ */
   useEffect(() => {
-    if (!loading && user?.role !== "MECHANIC") {
+    if (!loading && user && user.role !== "MECHANIC") {
       router.replace("/unauthorized");
     }
-  }, [loading, user]);
-
-  useEffect(() => {
-    if (user) loadDashboard();
-  }, [user]);
+    if (!loading && !user) {
+      router.replace("/");
+    }
+  }, [loading, user, router]);
 
   async function loadDashboard() {
     try {
-      const [summaryRes, tasksRes] = await Promise.all([
+      const [summaryRes, tasksRes] = await Promise.allSettled([
         api.get("/mechanic/dashboard/summary"),
         api.get("/mechanic/tasks"),
       ]);
-      setSummary(summaryRes.data.summary);
-      setTasks(tasksRes.data.tasks);
+      console.log("sumamry : ",summaryRes);
+      console.log("taskdata : ",tasksRes);
+      setSummary(summaryRes.value.data.summary );
+      setTasks(tasksRes.value.data.tasks );
     } catch (error) {
       console.error("Critical: Dashboard Data Fetch Failed", error);
     }
   }
 
+  useEffect(()=>{
+    console.log("Loading dashboard")
+    loadDashboard()
+  },[user])
   if (loading || !user) return <LoadingDashboard />;
 
   return (
@@ -64,7 +68,8 @@ export default function MechanicDashboardPage() {
           </div>
           <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] flex items-center gap-2">
             Mechanic ID: {user.id?.slice(0, 8) || "UNIT-00"}{" "}
-            <span className="h-1 w-1 rounded-full bg-slate-300" /> {user.status=="ACTIVE"?"System Online" :"System Offline"}
+            <span className="h-1 w-1 rounded-full bg-slate-300" />{" "}
+            {user.status == "ACTIVE" ? "System Online" : "System Offline"}
           </p>
         </div>
 
@@ -118,13 +123,7 @@ export default function MechanicDashboardPage() {
               </p>
             </div>
           ) : (
-            tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-
-              />
-            ))
+            tasks.map((task) => <TaskCard key={task.id} task={task} />)
           )}
         </div>
       </div>

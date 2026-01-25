@@ -36,6 +36,15 @@ export default function AllTicketsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 1000); // 400ms delay
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const loadTickets = useCallback(
     async (isInitial = false) => {
@@ -47,7 +56,7 @@ export default function AllTicketsPage() {
             page: currentPage,
             limit: 10,
             status: status,
-            search: search, // If your backend handles search, pass it here
+            search: debouncedSearch, // If your backend handles search, pass it here
           },
         });
 
@@ -61,14 +70,17 @@ export default function AllTicketsPage() {
         setRefreshing(false);
       }
     },
-    [currentPage, status, search]
+    [currentPage, status, debouncedSearch],
   );
 
   useEffect(() => {
     loadTickets(true);
-  }, [currentPage, status]); // Re-fetch when page or status changes
+  }, [currentPage, status,debouncedSearch]); // Re-fetch when page or status changes
 
   // Reset to page 1 when status changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
     setCurrentPage(1);
@@ -122,7 +134,7 @@ export default function AllTicketsPage() {
                   "px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap disabled:opacity-50",
                   status === s
                     ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                    : "text-slate-500 hover:bg-slate-50"
+                    : "text-slate-500 hover:bg-slate-50",
                 )}
               >
                 {s.replace("_", " ")}
@@ -135,7 +147,7 @@ export default function AllTicketsPage() {
         <div
           className={cn(
             "grid gap-4 transition-opacity",
-            refreshing ? "opacity-50" : "opacity-100"
+            refreshing ? "opacity-50" : "opacity-100",
           )}
         >
           {tickets.length === 0 ? (
@@ -200,7 +212,7 @@ export default function AllTicketsPage() {
                         "w-10 h-10 rounded-lg text-sm font-bold transition-all",
                         currentPage === pageNum
                           ? "bg-blue-600 text-white shadow-md"
-                          : "hover:bg-slate-100 text-slate-600"
+                          : "hover:bg-slate-100 text-slate-600",
                       )}
                     >
                       {pageNum}
@@ -238,7 +250,6 @@ const NoResults = ({ status }) => (
     </p>
   </div>
 );
-
 
 const TicketSkeleton = () => (
   <div className="w-full bg-white border border-slate-100 rounded-2xl p-6 flex flex-col md:flex-row gap-6 animate-pulse">

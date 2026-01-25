@@ -8,7 +8,7 @@ export async function registerFCMTokenAfterLogin() {
   if (typeof window === "undefined") return;
 
   // 1. Prevent redundant hits in the same session
-  const alreadySent = sessionStorage.getItem("fcm_sent");
+  const alreadySent = localStorage.getItem("fcm_sent");
   if (alreadySent) return;
 
   try {
@@ -21,7 +21,7 @@ export async function registerFCMTokenAfterLogin() {
         token: existingToken,
         deviceInfo: navigator.userAgent,
       });
-      sessionStorage.setItem("fcm_sent", "true"); // Mark as synced
+      localStorage.setItem("fcm_sent", "true"); // Mark as synced
       return;
     }
 
@@ -45,7 +45,7 @@ export async function registerFCMTokenAfterLogin() {
         token,
         deviceInfo: navigator.userAgent,
       });
-      sessionStorage.setItem("fcm_sent", "true");
+      localStorage.setItem("fcm_sent", "true");
       console.log("New FCM token registered successfully");
     }
   } catch (error) {

@@ -8,8 +8,11 @@ export default function UnauthorizedPage() {
   const { user } = useUser();
   const router = useRouter();
 
-  const role = user?.role || "CLIENT";
-
+  if(!user || !user?.role){
+    router.push("/login");
+  }
+  
+  const role = user?.role;
   const redirectPath = !role
     ? "/"
     : role === "ADMIN"

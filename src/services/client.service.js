@@ -16,12 +16,10 @@ export async function getAllServices() {
   }
 }
 
-export async function addTicket(formData) {
+export async function addTicket(payload) {
 try{
-    const res = await api.post("/client/add-ticket", formData, {
-        headers: {
-            "Content-Type": "multipart/form-data",
-        },
+    const res = await api.post("/client/add-ticket", payload, {
+
     });
     return {
         success:true,

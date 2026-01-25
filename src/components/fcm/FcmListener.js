@@ -1,16 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { getFirebaseMessaging } from "@/lib/firebase";
 import { onMessage } from "firebase/messaging";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { BellRing, ShieldAlert, CheckCircle2, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 
 export default function FCMListener() {
   const router = useRouter();
-  const { user } = useUser(); // Get live user state
+  const { user } = useUser(); // get role
 
   useEffect(() => {
     let unsubscribe;
@@ -20,18 +19,19 @@ export default function FCMListener() {
       if (!messaging) return;
 
       unsubscribe = onMessage(messaging, (payload) => {
-        // 1. Extract raw data
-        const type = payload.data?.type || "INFO";
-        const ticketId = payload.data?.ticketId;
+        const type = payload?.data?.type || "info";
+        const ticketId = payload?.data?.ticketId || null;
 
-        // 2. Determine Role at the MOMENT the message arrives
-        const role = user?.role?.toLowerCase() || "client";
+        const title = payload?.notification?.title || "Notification";
+        const body =
+          payload?.notification?.body || "You have a new notification";
 
-        // 3. Centralized Navigation Logic
-        const handleNavigation = (closeToast) => {
-          if (!ticketId) return;
+        const role = user?.role?.toLowerCase(); // client | admin | mechanic
 
-          // Route branching based on SSCMS architecture
+        // 🔹 Navigation handler (only if ticketId exists)
+        const handleNavigation = () => {
+          if (!ticketId || !role) return;
+
           if (role === "client") {
             router.push(`/dashboard/client/tickets/${ticketId}`);
           } else if (role === "mechanic") {
@@ -39,94 +39,49 @@ export default function FCMListener() {
           } else {
             router.push(`/dashboard/admin/tickets/${ticketId}`);
           }
-
-          closeToast();
         };
 
-        toast(
-          ({ closeToast }) => (
-            <div
-              onClick={() =>
-                type === "REDIRECT" && handleNavigation(closeToast)
-              }
-              className={`relative w-80 rounded-2xl bg-slate-900 text-white p-5 shadow-2xl border-l-4 transition-all duration-300 ${
-                type === "REDIRECT"
-                  ? "border-red-500 cursor-pointer hover:bg-slate-800"
-                  : type === "SUCCESS"
-                  ? "border-emerald-500"
-                  : "border-blue-600"
-              } animate-in slide-in-from-right-4`}
-            >
-              <div className="flex gap-4">
-                <div className="mt-1">
-                  {type === "REDIRECT" ? (
-                    <ShieldAlert
-                      className="text-red-500 animate-pulse"
-                      size={20}
-                    />
-                  ) : type === "SUCCESS" ? (
-                    <CheckCircle2 className="text-emerald-500" size={20} />
-                  ) : (
-                    <BellRing className="text-blue-500" size={20} />
-                  )}
-                </div>
+        // 🔹 Toast rendering
+        const content = (
+          <div
+            onClick={() => ticketId && handleNavigation()}
+            className={ticketId ? "cursor-pointer" : ""}
+          >
+            <strong className="block text-sm">{title}</strong>
+            <p className="text-xs text-gray-300 mt-1">{body}</p>
 
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <strong className="text-[11px] font-black uppercase tracking-widest text-white/90">
-                      {payload.notification?.title || "System Update"}
-                    </strong>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeToast();
-                      }}
-                      className="text-slate-500 hover:text-white p-1"
-                    >
-                      <span className="text-xs font-black">✕</span>
-                    </button>
-                  </div>
-
-                  <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-tighter">
-                    {payload.notification?.body}
-                  </p>
-
-                  {ticketId && (
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNavigation(closeToast);
-                        }}
-                        className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
-                          type === "REDIRECT"
-                            ? "text-red-400 hover:text-red-300"
-                            : "text-blue-400 hover:text-blue-300"
-                        }`}
-                      >
-                        {type === "REDIRECT" ? "Fix Now" : "Inspect"}
-                        <ArrowRight size={10} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ),
-          {
-            autoClose: type === "REDIRECT" ? 12000 : 7000,
-            closeOnClick: false,
-            draggable: true,
-            position: "top-right",
-            className: "!bg-transparent !shadow-none !p-0",
-          },
+            {ticketId && (
+              <p className="text-[10px] mt-2 text-blue-400 font-bold">
+                Click to open ticket →
+              </p>
+            )}
+          </div>
         );
+
+        // 🔹 Type based toast
+        if (type === "security") {
+          toast.warning(content, getToastOptions(8000));
+        } else if (type === "critical") {
+          toast.error(content, getToastOptions(12000));
+        } else {
+          toast.info(content, getToastOptions(5000));
+        }
       });
     }
 
     init();
     return () => unsubscribe?.();
-  }, [router, user]); // Re-subscribe if user state changes
+  }, [router, user?.role]);
 
   return null;
+}
+
+// 🔹 Common toast options
+function getToastOptions(time) {
+  return {
+    position: "top-right",
+    autoClose: time,
+    closeOnClick: true,
+    draggable: true,
+  };
 }

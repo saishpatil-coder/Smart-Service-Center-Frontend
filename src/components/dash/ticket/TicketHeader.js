@@ -1,6 +1,7 @@
 import { statusStyles } from "@/constants/app";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import Image from "next/image";
 import React from "react";
 
 function TicketHeader({ ticket, timeLeftStr, acceptTimeLeftStr }) {

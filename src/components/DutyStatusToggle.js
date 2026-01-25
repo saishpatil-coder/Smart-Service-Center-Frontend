@@ -10,7 +10,6 @@ import { useUser } from "@/context/UserContext";
 export default function DutyStatusToggle({ status, onChange }) {
   const [loading, setLoading] = useState(false);
   const { setUser } = useUser();
-  console.log("status : ",status)
 
   // Internal state for smooth, immediate animation
   const [localActive, setLocalActive] = useState(status === "ACTIVE");
