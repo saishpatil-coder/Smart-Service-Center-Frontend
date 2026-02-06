@@ -17,19 +17,9 @@ export async function getAllServices() {
 }
 
 export async function addTicket(payload) {
-try{
-    const res = await api.post("/client/add-ticket", payload, {
-
-    });
+    const res = await api.post("/client/add-ticket", payload);
     return {
         success:true,
         data: res.data.ticket,
     }
-}catch(error){
-    return {
-        success:false,
-        message: "Unable to create ticket.",
-    };
-
-}    
 }

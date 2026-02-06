@@ -26,7 +26,9 @@ export default function TaskCard({ task, onStart, onComplete, isFinishing }) {
         isFinishing
           ? "scale-[0.98] border-emerald-500 bg-emerald-50/30"
           : "border-slate-200 shadow-sm",
-        isInProgress && !isFinishing && "border-blue-400 ring-4 ring-blue-500/5"
+        isInProgress &&
+          !isFinishing &&
+          "border-blue-400 ring-4 ring-blue-500/5",
       )}
     >
       {/* SUCCESS OVERLAY: Enhanced with smoother transition */}
@@ -49,7 +51,7 @@ export default function TaskCard({ task, onStart, onComplete, isFinishing }) {
               "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
               isInProgress
                 ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-slate-500"
+                : "bg-slate-100 text-slate-500",
             )}
           >
             <Wrench size={20} />
@@ -65,7 +67,7 @@ export default function TaskCard({ task, onStart, onComplete, isFinishing }) {
                   "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
                   isInProgress
                     ? "bg-blue-50 text-blue-700 border-blue-100"
-                    : "bg-amber-50 text-amber-700 border-amber-100"
+                    : "bg-amber-50 text-amber-700 border-amber-100",
                 )}
               >
                 {task.status.replace("_", " ")}
@@ -84,7 +86,7 @@ export default function TaskCard({ task, onStart, onComplete, isFinishing }) {
                 e.stopPropagation();
                 onStart();
               }}
-              className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
             >
               <PlayCircle size={18} /> Start
             </button>
@@ -94,7 +96,7 @@ export default function TaskCard({ task, onStart, onComplete, isFinishing }) {
                 e.stopPropagation();
                 onComplete();
               }}
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-100"
+              className="w-full cursor-pointer sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-100"
             >
               <CheckCircle2 size={18} /> Complete
             </button>

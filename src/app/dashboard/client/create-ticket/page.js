@@ -280,7 +280,7 @@ const handleSubmit = async (e) => {
                 <div className="space-y-3">
                   <TimelineItem
                     icon={<CheckCircle2 size={14} />}
-                    label="Center Acceptance"
+                    label="Center Confirmation"
                     time={slaPreview?.slaAcceptDeadline}
                   />
                   <TimelineItem

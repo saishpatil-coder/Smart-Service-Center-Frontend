@@ -15,7 +15,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { escalateTicket, savePriorityOfTicket } from "@/services/admin.service";
@@ -34,7 +33,7 @@ export default function QueueCard({ ticket, onRefresh }) {
     isEscalated,
     status,
   } = ticket;
-  console.log(ticket)
+  console.log(ticket);
   const router = useRouter();
 
   const [isEditingPriority, setIsEditingPriority] = useState(false);
@@ -44,14 +43,14 @@ export default function QueueCard({ ticket, onRefresh }) {
   const handleEscalate = async () => {
     setSubmitting(true);
     try {
-await escalateTicket(ticket.id)
+      await escalateTicket(ticket.id);
       toast.success("Ticket Escalated");
       onRefresh && onRefresh();
       router.refresh();
     } catch (err) {
       console.error(err);
       toast.error("Escalation failed");
-    }finally{
+    } finally {
       setSubmitting(false);
     }
   };
@@ -63,10 +62,10 @@ await escalateTicket(ticket.id)
       toast.success("Priority Rank Updated");
       setIsEditingPriority(false);
       onRefresh && onRefresh();
-      router.refresh()
+      router.refresh();
     } catch (error) {
       toast.error("Failed to update priority");
-    } finally{
+    } finally {
       setSubmitting(false);
     }
   };
@@ -77,7 +76,7 @@ await escalateTicket(ticket.id)
         "flex justify-between p-5 bg-white rounded-xl border shadow-sm hover:shadow-md transition relative overflow-hidden",
         isEscalated
           ? "border-l-4 border-l-red-500 bg-red-50/20"
-          : "border-slate-200"
+          : "border-slate-200",
       )}
     >
       {/* Left: Original Info */}
@@ -106,7 +105,7 @@ await escalateTicket(ticket.id)
                   "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
                   status === "PENDING"
                     ? "bg-amber-100 text-amber-700"
-                    : "bg-green-100 text-green-700"
+                    : "bg-green-100 text-green-700",
                 )}
               >
                 {status}
@@ -162,7 +161,7 @@ await escalateTicket(ticket.id)
                   autoFocus
                 />
                 <button
-                disabled={submitting}
+                  disabled={submitting}
                   onClick={handleSavePriority}
                   className="bg-blue-600 text-white p-1 rounded-md hover:bg-blue-700 transition-colors shadow-sm"
                 >
@@ -195,7 +194,7 @@ await escalateTicket(ticket.id)
         <div className="flex items-center gap-2 mt-4">
           {!isEscalated && (
             <button
-            disabled={submitting}
+              disabled={submitting}
               onClick={handleEscalate}
               className="flex items-center gap-1.5 px-3 py-2 bg-white border border-red-200 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white hover:border-red-600 transition-all active:scale-95 shadow-sm"
             >

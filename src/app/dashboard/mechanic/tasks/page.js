@@ -108,7 +108,7 @@ export default function MechanicActiveTasksPage() {
         <button
           onClick={() => loadTasks()}
           disabled={loading}
-          className="group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all active:scale-90"
+          className="group p-3 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all cursor-pointer active:scale-90"
         >
           <RefreshCw
             size={18}

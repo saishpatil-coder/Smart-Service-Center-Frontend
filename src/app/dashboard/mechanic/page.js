@@ -10,6 +10,7 @@ import
     CheckCircle2,
     ChevronRight,
     Clock,
+    Loader2,
     PlayCircle,
     Radio,
     ShieldCheck,
@@ -22,6 +23,7 @@ import { useEffect, useState } from "react";
 export default function MechanicDashboardPage() {
   const [summary, setSummary] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [dataLoading, setDataLoading] = useState(false);
   const { user, loading} = useUser();
   const router = useRouter();
   /* ------------------ ROLE PROTECTION ------------------ */
@@ -35,17 +37,21 @@ export default function MechanicDashboardPage() {
   }, [loading, user, router]);
 
   async function loadDashboard() {
+   if(!user)return ;
+   setDataLoading(true);
     try {
       const [summaryRes, tasksRes] = await Promise.allSettled([
         api.get("/mechanic/dashboard/summary"),
         api.get("/mechanic/tasks"),
       ]);
-      console.log("sumamry : ",summaryRes);
-      console.log("taskdata : ",tasksRes);
-      setSummary(summaryRes.value.data.summary );
-      setTasks(tasksRes.value.data.tasks );
+      console.log("sumamry : ", summaryRes);
+      console.log("taskdata : ", tasksRes);
+      setSummary(summaryRes.value.data.summary);
+      setTasks(tasksRes.value.data.tasks);
     } catch (error) {
       console.error("Critical: Dashboard Data Fetch Failed", error);
+    } finally {
+      setDataLoading(false)
     }
   }
 
@@ -81,6 +87,7 @@ export default function MechanicDashboardPage() {
       {/* STATS GRID: High-Density Industrial Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
+          loading={dataLoading}
           icon={<Zap size={22} />}
           label="Assigned Load"
           value={summary?.totalAssigned || 0}
@@ -88,6 +95,7 @@ export default function MechanicDashboardPage() {
           subLabel="Total tickets in queue"
         />
         <StatCard
+          loading={dataLoading}
           icon={<Clock size={22} />}
           label="Active Duty"
           value={summary?.inProgress || 0}
@@ -95,6 +103,7 @@ export default function MechanicDashboardPage() {
           subLabel="Live working sessions"
         />
         <StatCard
+          loading={dataLoading}
           icon={<ShieldCheck size={22} />}
           label="Daily Output"
           value={summary?.completedToday || 0}
@@ -132,7 +141,7 @@ export default function MechanicDashboardPage() {
 }
 
 // SUB-COMPONENTS
-function StatCard({ icon, label, value, color, subLabel }) {
+function StatCard({ icon, label, value, color, subLabel,loading }) {
   const themes = {
     blue: "text-blue-600 bg-blue-50 border-blue-100",
     amber: "text-amber-600 bg-amber-50 border-amber-100",
@@ -158,7 +167,7 @@ function StatCard({ icon, label, value, color, subLabel }) {
         {label}
       </p>
       <div className="flex items-baseline gap-2">
-        <h3 className="text-4xl font-black text-slate-900">{value}</h3>
+        <h3 className="text-4xl font-black text-slate-900">{loading? <Loader2/> :value}</h3>
         <span className="text-[10px] font-bold text-slate-400 lowercase">
           {subLabel}
         </span>

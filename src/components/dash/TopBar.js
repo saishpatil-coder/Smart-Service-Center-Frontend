@@ -24,17 +24,16 @@ import {
 import { deleteFCMToken, logout } from "@/services/auth.service";
 import { toast } from "react-toastify";
 import { useDashboard } from "@/context/DashBoardContext";
+import { useLogout } from "@/hooks/useLogout";
 
 export default function DashboardTopbar() {
   const { user, setUser } = useUser();
   const { search, setSearch } = useDashboard();
-  const router = useRouter();
-
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
+  const {loggingOut ,triggerLogout} = useLogout();
 
   // Close on Click Outside
   useEffect(() => {
@@ -73,20 +72,7 @@ export default function DashboardTopbar() {
   if (!user) return null;
 
   const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await deleteFCMToken();
-      localStorage.removeItem("fcm_sent");
-      await logout();
-      toast.success("Logged out successfully");
-      setUser(null);
-      router.push("/login");
-
-    } catch (error) {
-      toast.error("Logout failed");
-    } finally {
-      setLoggingOut(false);
-    }
+    triggerLogout(setUser)
   };
 
   return (
@@ -136,7 +122,7 @@ export default function DashboardTopbar() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`p-2 rounded-full transition-all relative ${
+              className={`p-2 cursor-pointer rounded-full transition-all relative ${
                 isOpen
                   ? "bg-white/20 text-white"
                   : "text-blue-100 hover:text-white hover:bg-white/10"
@@ -162,7 +148,7 @@ export default function DashboardTopbar() {
                       onClick={async () => {
                         await markAllAsRead();
                         setNotifications((n) =>
-                          n.map((i) => ({ ...i, isRead: true }))
+                          n.map((i) => ({ ...i, isRead: true })),
                         );
                       }}
                       className="text-[11px] text-blue-600 font-bold hover:underline"
@@ -217,8 +203,8 @@ export default function DashboardTopbar() {
                               await markAsRead(n.id);
                               setNotifications((prev) =>
                                 prev.map((x) =>
-                                  x.id === n.id ? { ...x, isRead: true } : x
-                                )
+                                  x.id === n.id ? { ...x, isRead: true } : x,
+                                ),
                               );
                             }
                           }}
@@ -241,7 +227,7 @@ export default function DashboardTopbar() {
                             e.stopPropagation();
                             await deleteNotification(n.id);
                             setNotifications((prev) =>
-                              prev.filter((x) => x.id !== n.id)
+                              prev.filter((x) => x.id !== n.id),
                             );
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition"
@@ -268,7 +254,7 @@ export default function DashboardTopbar() {
             </p>
           </div>
 
-          <div className="relative group cursor-pointer">
+          <div className="relative group">
             <div className="w-10 h-10 rounded-xl bg-white p-0.5 shadow-lg group-hover:rotate-3 transition-transform">
               <div className="w-full h-full rounded-[10px] bg-gradient-to-br from-white to-blue-50 flex items-center justify-center text-blue-700 font-black text-sm border border-blue-100">
                 {user.name?.charAt(0).toUpperCase()}
@@ -279,7 +265,7 @@ export default function DashboardTopbar() {
           <button
             onClick={handleLogout}
             disabled={loggingOut}
-            className="flex items-center justify-center w-10 lg:w-auto lg:px-4 h-10 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-95"
+            className="flex items-center cursor-pointer justify-center w-10 lg:w-auto lg:px-4 h-10 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-95"
             title="Sign Out"
           >
             {loggingOut ? (

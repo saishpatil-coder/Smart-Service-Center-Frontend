@@ -5,11 +5,18 @@ import { getFirebaseMessaging } from "@/lib/firebase";
 import api from "@/lib/axios";
 
 export async function registerFCMTokenAfterLogin() {
-  if (typeof window === "undefined") return;
+  console.log("FCM registering !!!")
+  if (typeof window === "undefined") {
+    console.log("windows not compatible");
+    return;
+  }
 
   // 1. Prevent redundant hits in the same session
   const alreadySent = localStorage.getItem("fcm_sent");
-  if (alreadySent) return;
+  if (alreadySent){
+    console.log("already sent");
+    return;
+  }
 
   try {
     const existingToken = localStorage.getItem("fcm_token");
@@ -24,6 +31,7 @@ export async function registerFCMTokenAfterLogin() {
       localStorage.setItem("fcm_sent", "true"); // Mark as synced
       return;
     }
+    console.log("no existing token creating new ")
 
     // CASE 2: New Token Generation
     const permission = await Notification.requestPermission();

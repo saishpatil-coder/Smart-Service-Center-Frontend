@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import TicketMessaging from "@/components/dash/TicketMessaging";
 import TicketFeedback from "@/components/dash/TicketFeedback";
+import TicketNotFound from "@/components/dash/ticket/TicketNotFound";
 
 export default function MechanicTaskDetailsPage(props) {
   const router = useRouter();
@@ -107,7 +108,7 @@ const addPartsUsed = async () => {
       </div>
     );
 
-  if (!ticket) return null;
+  if (!ticket) return <TicketNotFound/>;
 
   const isInProgress = ticket.status === "IN_PROGRESS";
   const isCompleted = ticket.status === "COMPLETED";
@@ -366,7 +367,9 @@ const addPartsUsed = async () => {
       </div>
     </div>
   );
-}function InventoryRow({
+}
+
+function InventoryRow({
   item,
   stock,
   isSelected,

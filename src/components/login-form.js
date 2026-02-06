@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/services/auth.service";
+import { deleteFCMToken, login } from "@/services/auth.service";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
 import { Loader2, KeyRound, Mail, Beaker } from "lucide-react";
@@ -28,6 +28,7 @@ export function LoginForm({ className, ...props }) {
   const router = useRouter();
 
   const handleSubmit = async (e,manualData) => {
+    localStorage.removeItem("fcm_sent");
     e.preventDefault();
     setError("");
     const formData = manualData || data;

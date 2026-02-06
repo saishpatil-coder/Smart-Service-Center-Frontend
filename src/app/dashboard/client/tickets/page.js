@@ -138,6 +138,8 @@ const paginatedTickets = useMemo(() => {
 const STATUS_FILTERS = [
   { id: "ALL", label: "All Tickets" },
   { id: "PENDING", label: "Pending" },
+  { id: "ACCEPTED", label: "Accepted" },
+  { id: "ASSIGNED", label: "Assigned" },
   { id: "IN_PROGRESS", label: "Active" },
   { id: "COMPLETED", label: "Resolved" },
   { id: "CANCELLED", label: "Cancelled" },

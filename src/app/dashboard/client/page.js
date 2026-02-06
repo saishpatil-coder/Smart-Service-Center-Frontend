@@ -92,7 +92,7 @@ export default function ClientDashboardPage() {
         </div>
         <button
           onClick={() => router.push("/dashboard/client/create-ticket")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg shadow-blue-200 transition-all active:scale-95 text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg shadow-blue-200 transition-all active:scale-95 text-sm cursor-pointer"
         >
           + New Request
         </button>
@@ -132,7 +132,7 @@ export default function ClientDashboardPage() {
 
           <button
             onClick={() => router.push("/dashboard/client/tickets")}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+            className="text-sm cursor-pointer font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
           >
             View History <ChevronRight size={16} />
           </button>

@@ -14,21 +14,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useLogout } from "@/hooks/useLogout";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
   const { user, loading, setUser } = useUser();
   const router = useRouter();
+  const {triggerLogout,loggingOut} = useLogout();
 
   const handleLogout = async () => {
-    await logout();
-    setUser(null);
-    setOpenMenu(false);
-    router.push("/login");
+    triggerLogout(setUser);
   };
+  useEffect(()=>{
+    console.log(user)
+  },[user])
 
   const navigateToDashboard = () => {
     const role = user?.role?.toLowerCase();
@@ -66,10 +68,9 @@ export default function Navbar() {
 
         {/* USER PROFILE / AUTH */}
         <div className="hidden md:flex items-center">
-          {
-            loading?<Loader2/>:
-          
-          !user ? (
+          {loading ? (
+            <Loader2 />
+          ) : !user ? (
             <Link
               href="/login"
               className="bg-white text-[#6CA8F7] px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-50 transition-all active:scale-95"
@@ -92,7 +93,7 @@ export default function Navbar() {
                   size={12}
                   className={cn(
                     "text-white/50 transition-transform duration-300",
-                    openMenu && "rotate-180"
+                    openMenu && "rotate-180",
                   )}
                 />
               </button>
@@ -118,16 +119,22 @@ export default function Navbar() {
                   </button>
 
                   <button
+                    disabled={loggingOut}
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 text-left text-red-500 hover:bg-red-50 px-4 py-3 rounded-lg transition-all font-bold text-xs uppercase tracking-wider"
                   >
-                    <LogOut size={16} className="text-red-300" /> Sign Out
+                    {loggingOut ? (
+                      <Loader2 />
+                    ) : (
+                      <>
+                        <LogOut size={16} className="text-red-300" /> Sign Out
+                      </>
+                    )}
                   </button>
                 </div>
               )}
             </div>
           )}
-          
         </div>
 
         {/* MOBILE TRIGGER */}
@@ -166,10 +173,15 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="pt-6 border-t border-white/10">
-            {
-            loading ? <Loader2/>:
-            !user ? (
+            {loading ? (
+              <Loader2 />
+            ) : !user ? (
               <Link
+              onClick={
+                ()=>{
+                  setOpen(false)
+                }
+              }
                 href="/login"
                 className="block w-full text-center bg-white text-[#6CA8F7] py-4 rounded-xl font-black uppercase tracking-widest text-xs"
               >

@@ -14,6 +14,9 @@ import {
   Eye,
   Wrench,
   SearchX,
+  Save,
+  Loader2,
+  X,
 } from "lucide-react";
 import { useDashboard } from "@/context/DashBoardContext";
 
@@ -22,6 +25,10 @@ export default function ServicesPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("TITLE");
+  // --- NEW: State for Inline Editing ---
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     api
@@ -34,6 +41,33 @@ export default function ServicesPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // 1. Add Handler for Status Toggling
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      // Optimistic UI update (optional, but feels snappier)
+      setServices((prev) =>
+        prev.map((svc) =>
+          svc.id === id ? { ...svc, isActive: !currentStatus } : svc,
+        ),
+      );
+
+      // Call API (Assumes you have a PATCH endpoint)
+      await api.patch(`/admin/services/${id}/status`, {
+        isActive: !currentStatus,
+      });
+
+      toast.success(`Service ${!currentStatus ? "activated" : "deactivated"}`);
+    } catch (error) {
+      // Revert on failure
+      setServices((prev) =>
+        prev.map((svc) =>
+          svc.id === id ? { ...svc, isActive: currentStatus } : svc,
+        ),
+      );
+      toast.error("Failed to update status");
+    }
+  };
 
   const sortedServices = useMemo(() => {
     const data = [...services];
@@ -51,10 +85,51 @@ export default function ServicesPage() {
     return sortedServices.filter(
       (service) =>
         service.serviceTitle.toLowerCase().includes(search.toLowerCase()) ||
-        service.type.toLowerCase().includes(search.toLowerCase())
+        service.type.toLowerCase().includes(search.toLowerCase()),
     );
   }, [sortedServices, search]);
+  // 1. Enter Edit Mode
+  const handleEditClick = (service) => {
+    setEditingId(service.id);
+    // Pre-fill the form with current values
+    setEditForm({
+      serviceTitle: service.serviceTitle,
+      type: service.type,
+      defaultExpectedHours: service.defaultExpectedHours,
+      defaultCost: service.defaultCost,
+    });
+  };
+  // 2. Handle Input Changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
 
+  // 3. Cancel Edit
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+  // 4. Save Changes
+  const handleSave = async (id) => {
+    setIsSaving(true);
+    try {
+      const response = await api.put(`/admin/services/${id}`, editForm);
+
+      // Update local state with the returned updated service
+      setServices((prev) =>
+        prev.map((svc) => (svc.id === id ? response.data.service : svc)),
+      );
+
+      toast.success("Service updated successfully");
+      setEditingId(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update service");
+    } finally {
+      setIsSaving(false);
+    }
+  };
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
       {/* Header Section */}
@@ -152,83 +227,188 @@ export default function ServicesPage() {
                   </td>
                 </tr>
               ) : (
-                filteredServices.map((service, index) => (
-                  <tr
-                    key={service.id}
-                    className="group hover:bg-blue-50/30 transition-colors"
-                  >
-                    <td className="px-6 py-4 text-sm font-medium text-slate-400">
-                      {String(index + 1).padStart(2, "0")}
-                    </td>
+                filteredServices.map((service, index) => {
+                  const isEditing = editingId === service.id;
 
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
-                          {service.serviceTitle}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-medium mt-0.5">
-                          ID: {service.id.slice(-8).toUpperCase()}
-                        </span>
-                      </div>
-                    </td>
+                  return (
+                    <tr
+                      key={service.id}
+                      className={`group transition-colors ${
+                        isEditing ? "bg-blue-50/50" : "hover:bg-blue-50/30"
+                      }`}
+                    >
+                      <td className="px-6 py-4 text-sm font-medium text-slate-400">
+                        {String(index + 1).padStart(2, "0")}
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold uppercase tracking-tighter">
-                        {service.type}
-                      </span>
-                    </td>
+                      {/* 1. Title Column */}
+                      <td className="px-6 py-4">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="serviceTitle"
+                            value={editForm.serviceTitle}
+                            onChange={handleInputChange}
+                            className="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                        ) : (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                              {service.serviceTitle}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              ID: {String(service.id).slice(-8).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-2 w-2 rounded-full shadow-sm"
-                          style={{
-                            backgroundColor: service.Severity?.color || "#999",
-                          }}
-                        />
-                        <span className="text-sm font-semibold text-slate-700">
-                          {service.Severity?.name}
-                        </span>
-                      </div>
-                    </td>
+                      {/* 2. Type Column */}
+                      <td className="px-6 py-4">
+                        {isEditing ? (
+                          <select
+                            name="type"
+                            value={editForm.type}
+                            onChange={handleInputChange}
+                            className="px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="Repair">Repair</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Inspection">Inspection</option>
+                          </select>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold uppercase tracking-tighter">
+                            {service.type}
+                          </span>
+                        )}
+                      </td>
 
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm font-bold text-slate-700">
-                        {service.defaultExpectedHours || "0"}
-                        <span className="text-[10px] text-slate-400 ml-0.5 italic">
-                          hrs
-                        </span>
-                      </span>
-                    </td>
+                      {/* 3. Priority (Severity) - Read Only in inline edit for simplicity */}
+                      <td className="px-6 py-4 opacity-70">
+                        {/* Note: Editing relational data like Severity usually requires a full dropdown fetch. 
+                             Kept read-only for inline edit to prevent complexity. */}
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-2 w-2 rounded-full shadow-sm"
+                            style={{
+                              backgroundColor:
+                                service.Severity?.color || "#999",
+                            }}
+                          />
+                          <span className="text-sm font-semibold text-slate-700">
+                            {service.Severity?.name}
+                          </span>
+                        </div>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-extrabold text-slate-900">
-                        {service.defaultCost ? `₹${service.defaultCost}` : "—"}
-                      </span>
-                    </td>
+                      {/* 4. SLA Hours Column */}
+                      <td className="px-6 py-4 text-center">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            name="defaultExpectedHours"
+                            value={editForm.defaultExpectedHours}
+                            onChange={handleInputChange}
+                            className="w-16 text-center px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        ) : (
+                          <span className="text-sm font-bold text-slate-700">
+                            {service.defaultExpectedHours || "0"}
+                            <span className="text-[10px] text-slate-400 ml-0.5 italic">
+                              hrs
+                            </span>
+                          </span>
+                        )}
+                      </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title={service.isActive ? "Deactivate" : "Activate"}
-                        >
-                          {service.isActive ? (
-                            <Eye size={16} />
+                      {/* 5. Cost Column */}
+                      <td className="px-6 py-4">
+                        {isEditing ? (
+                          <div className="relative">
+                            <span className="absolute left-2 top-1.5 text-slate-400 text-sm">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              name="defaultCost"
+                              value={editForm.defaultCost}
+                              onChange={handleInputChange}
+                              className="w-24 pl-5 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm font-extrabold text-slate-900">
+                            {service.defaultCost
+                              ? `₹${service.defaultCost}`
+                              : "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 6. Actions Column */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={() => handleSave(service.id)}
+                                disabled={isSaving}
+                                className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg shadow-sm transition-all"
+                                title="Save"
+                              >
+                                {isSaving ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <Save size={16} />
+                                )}
+                              </button>
+                              <button
+                                onClick={handleCancel}
+                                disabled={isSaving}
+                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </>
                           ) : (
-                            <EyeOff size={16} />
+                            <>
+                              <button
+                                onClick={() => handleEditClick(service)}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                title="Edit"
+                              >
+                                <Edit3 size={16} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleToggleStatus(
+                                    service.id,
+                                    service.isActive,
+                                  )
+                                }
+                                className={`p-2 rounded-lg transition-all ${
+                                  service.isActive
+                                    ? "text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                    : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                                }`}
+                                title={
+                                  service.isActive ? "Deactivate" : "Activate"
+                                }
+                              >
+                                {service.isActive ? (
+                                  <Eye size={16} />
+                                ) : (
+                                  <EyeOff size={16} />
+                                )}
+                              </button>
+                            </>
                           )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

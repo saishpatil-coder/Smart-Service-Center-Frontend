@@ -34,6 +34,7 @@ export async function getCurrentUser() {
 
 
 export async function deleteFCMToken() {
+    localStorage.removeItem("fcm_sent"); 
   console.log("deleting fcm token from backend")
   const token = localStorage.getItem("fcm_token");
   if (!token) return;

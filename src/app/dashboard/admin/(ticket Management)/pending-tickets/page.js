@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Loader2,
   Clock,
@@ -15,33 +15,95 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { getPendingTickets } from "@/services/admin.service";
 
+
+
 export default function PendingTicketsPage() {
   const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // For initial page 1 load
+  const [isFetchingNext, setIsFetchingNext] = useState(false); // For scrolling load
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function loadTickets() {
+  // Sentinel ref to track when user reaches bottom
+  const observerTarget = useRef(null);
+
+  const loadTickets = useCallback(async (pageNum) => {
     try {
-      // Pass page to your service: getPendingTickets(page)
-      const res = await getPendingTickets(page);
-      setTickets(res.data.tickets || []);
-      setTotalPages(res.data.totalPages || 1);
+      if (pageNum === 1) {
+        setLoading(true);
+      } else {
+        setIsFetchingNext(true);
+      }
+
+      const res = await getPendingTickets(pageNum);
+      const newTickets = res.data.tickets || [];
+      const totalPages = res.data.totalPages || 1;
+
+      // Update hasMore status
+      setHasMore(pageNum < totalPages);
+
+      setTickets((prev) => {
+        if (pageNum === 1) return newTickets;
+
+        // Append new tickets (filter out duplicates if necessary based on ID)
+        const existingIds = new Set(prev.map((t) => t.id));
+        const uniqueNewTickets = newTickets.filter(
+          (t) => !existingIds.has(t.id),
+        );
+        return [...prev, ...uniqueNewTickets];
+      });
     } catch (err) {
       console.error("Error loading tickets:", err);
     } finally {
       setLoading(false);
+      setIsFetchingNext(false);
     }
-  }
+  }, []);
 
+  // 1. Fetch data whenever 'page' changes
   useEffect(() => {
-    loadTickets();
-  }, [page]);
+    loadTickets(page);
+  }, [page, loadTickets]);
 
-  if (loading) return;
-  <div className="flex justify-center items-center h-64">
-    <Loader2 className="animate-spin text-gray-500" size={32} />
-  </div>;
+  // 2. Setup Intersection Observer to detect scroll to bottom
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // If bottom div is visible, we have more data, and aren't currently loading...
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loading &&
+          !isFetchingNext
+        ) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1.0 }, // Trigger when 100% of the sentinel is visible
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, loading, isFetchingNext]);
+
+  // Initial loading state
+  if (loading && page === 1) {
+    return (
+      <div className="max-w-[1200px] mx-auto pt-10 px-4">
+        {/* Render your Skeleton component here */}
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="animate-spin text-gray-500" size={32} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-8 pb-20 px-4">
@@ -52,60 +114,37 @@ export default function PendingTicketsPage() {
             Pending <span className="text-slate-300">Triage</span>
           </h1>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Page {page} of {totalPages}
+            Showing {tickets.length} tickets
           </p>
         </div>
       </div>
 
-      {loading ? (
-        <PendingTicketsSkeleton />
-      ) : tickets.length === 0 ? (
-        <EmptyState />
+      {tickets.length === 0 && !loading ? (
+        // <EmptyState />
+        <div className="text-center py-20 text-slate-400">No tickets found</div>
       ) : (
-        <>
-          <div className="grid gap-4">
-            {tickets.map((t, index) => (
-              <PendingTicketCard key={t.id} ticket={t} />
-            ))}
-          </div>
-
-          {/* PAGINATION CONTROLS */}
-          <div className="flex items-center justify-center gap-4 pt-8">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="p-2 rounded-xl border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"
-            >
-              <ChevronLeft size={24} />
-            </button>
-
-            <div className="flex gap-2">
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={cn(
-                    "w-10 h-10 rounded-xl font-black transition-all",
-                    page === i + 1
-                      ? "bg-slate-900 text-white"
-                      : "bg-white border border-slate-100 text-slate-400 hover:border-slate-300"
-                  )}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="p-2 rounded-xl border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-colors"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-        </>
+        <div className="grid gap-4">
+          {tickets.map((t) => (
+            <PendingTicketCard key={t.id} ticket={t} />
+           
+          ))}
+        </div>
       )}
+
+      {/* Sentinel Element / Loading Indicator */}
+      <div
+        ref={observerTarget}
+        className="h-20 flex justify-center items-center w-full"
+      >
+        {isFetchingNext && (
+          <Loader2 className="animate-spin text-slate-400" size={24} />
+        )}
+        {!hasMore && tickets.length > 0 && (
+          <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">
+            End of list
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -145,7 +184,7 @@ function PendingTicketCard({ ticket }) {
             <span
               className={cn(
                 "text-[9px] font-black px-2 py-0.5 rounded-full uppercase border",
-                severityStyles
+                severityStyles,
               )}
             >
               {severityName}
@@ -168,7 +207,7 @@ function PendingTicketCard({ ticket }) {
             "px-6 py-3 rounded-2xl flex flex-col items-center justify-center min-w-[140px] border-2",
             isUrgent
               ? "border-red-100 bg-red-50 text-red-600 animate-pulse"
-              : "border-blue-50 bg-blue-50/30 text-blue-600"
+              : "border-blue-50 bg-blue-50/30 text-blue-600",
           )}
         >
           <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-1">
