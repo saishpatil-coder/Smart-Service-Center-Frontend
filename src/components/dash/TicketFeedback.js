@@ -119,6 +119,16 @@ export default function TicketFeedback({ ticketId }) {
                     </p>
                   </div>
                 )}
+                {feedbacks.mechanic.recommendations && (
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-400">
+                      Future Recommendations
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {feedbacks.mechanic.recommendations}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

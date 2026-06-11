@@ -55,8 +55,10 @@ api.interceptors.response.use(
         // If fail, reject all queued requests
         processQueue(refreshError, null);
 
-        // Optional: Redirect to login
-        // window.location.href = "/login";
+        // Redirect to login if on client-side
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -32,6 +32,7 @@ export default function MechanicTaskDetailsPage(props) {
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+const [showFeedback, setShowFeedback] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -62,6 +63,9 @@ export default function MechanicTaskDetailsPage(props) {
           action === "start" ? "In Progress" : "Completed"
         }`
       );
+          if (action === "complete") {
+            setShowFeedback(true); // 👈 trigger feedback
+          }
       await fetchData();
     } catch (err) {
       toast.error("Failed to update task status");
@@ -149,7 +153,7 @@ const addPartsUsed = async () => {
                     ticket.status === "IN_PROGRESS" &&
                       "bg-blue-50 text-blue-700 border-blue-200",
                     ticket.status === "COMPLETED" &&
-                      "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      "bg-emerald-50 text-emerald-700 border-emerald-200",
                   )}
                 >
                   {ticket.status.replace("_", " ")}
@@ -296,7 +300,7 @@ const addPartsUsed = async () => {
                 {inventory.map((item) => {
                   // Find if this item is in the selectedItems array to get its current quantity
                   const selectedItem = selectedItems.find(
-                    (i) => i.inventoryId === item.id
+                    (i) => i.inventoryId === item.id,
                   );
 
                   return (
@@ -323,7 +327,7 @@ const addPartsUsed = async () => {
                           ]);
                         } else {
                           setSelectedItems((prev) =>
-                            prev.filter((i) => i.inventoryId !== item.id)
+                            prev.filter((i) => i.inventoryId !== item.id),
                           );
                         }
                       }}
@@ -341,8 +345,8 @@ const addPartsUsed = async () => {
                           prev.map((i) =>
                             i.inventoryId === item.id
                               ? { ...i, quantity: finalQty }
-                              : i
-                          )
+                              : i,
+                          ),
                         );
                       }}
                     />
@@ -361,7 +365,12 @@ const addPartsUsed = async () => {
               </div>
             </div>
           )}
-          <TicketFeedback ticketId={ticket.id} />
+          {showFeedback && isCompleted && (
+            <TicketFeedback
+              ticketId={ticket.id}
+              onSubmitted={() => setShowFeedback(false)}
+            />
+          )}
           <TicketMessaging ticketId={ticket.id} status={ticket.status} />
         </div>
       </div>

@@ -144,7 +144,9 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}// --- HELPERS ---
+}
+
+// --- HELPERS ---
 const TimeframeSwitcher = ({ current, onChange }) => (
   <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200">
     {TIMEFRAMES.map((t) => (

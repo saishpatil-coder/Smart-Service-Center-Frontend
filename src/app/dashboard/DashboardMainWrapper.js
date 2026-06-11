@@ -10,6 +10,7 @@ import { APP_NAME } from "@/constants/app";
 import { useDashboard } from "@/context/DashBoardContext";
 import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
+import Chatbot from "@/components/Chatbot";
 
 export default function DashboardMainWrapper({ children }) {
   const { collapsed, setSearch } = useDashboard();
@@ -39,6 +40,7 @@ export default function DashboardMainWrapper({ children }) {
       {/* Real-time Listeners */}
       <SideBar />
       <FCMListener />
+      {user?.role === "CLIENT" && <Chatbot />}
 
       <div
         style={{ marginLeft: sidebarWidth }}
