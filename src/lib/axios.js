@@ -46,7 +46,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh");
+        const response = await api.post("/auth/refresh");
+        if (response.data && response.data.token) {
+          document.cookie = `token=${response.data.token}; path=/; max-age=3600; SameSite=Lax`;
+        }
 
         // If successful, process the queue
         processQueue(null);
